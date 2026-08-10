@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Floema — Entregas · Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde:#0E4D3A; --verde-claro:#3FA34D;
+    --bg:#F4F6F3; --surface:#FFFFFF; --ink:#16211C; --muted:#6B7A72; --line:#E4EAE5;
+    --pendente:#94A3B8; --rota:#2563EB; --concluido:#16A34A; --atrasado:#DC2626;
+    --radius:14px; --shadow:0 1px 2px rgba(16,33,28,.04),0 8px 24px rgba(16,33,28,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+  header{display:flex;align-items:center;gap:14px;padding:16px 22px;background:var(--verde);
+    color:#fff;position:sticky;top:0;z-index:5}
+  header .logo{width:34px;height:34px;border-radius:9px;background:var(--verde-claro);
+    display:grid;place-items:center;font-weight:700;font-size:18px}
+  header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.2px}
+  header .sub{font-size:12px;opacity:.7;margin-left:2px}
+  header .status-dot{margin-left:auto;font-size:12px;opacity:.85;display:flex;gap:7px;align-items:center}
+  header .status-dot i{width:8px;height:8px;border-radius:50%;background:var(--verde-claro);
+    display:inline-block;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:18px;padding:18px;
+    height:calc(100% - 66px)}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;height:auto}}
+
+  .col{display:flex;flex-direction:column;gap:16px;min-height:0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow)}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    margin:0;padding:16px 18px 0}
+
+  /* Formulário */
+  form{padding:14px 18px 18px;display:grid;gap:11px}
+  .row{display:grid;gap:11px}
+  .row.two{grid-template-columns:1fr 1fr}
+  .row.cep{grid-template-columns:120px 1fr}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;font-weight:500}
+  input[type=text],input[type=tel],input[type=time],select{width:100%;padding:10px 12px;
+    border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff;
+    color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus{outline:none;border-color:var(--verde-claro);
+    box-shadow:0 0 0 3px rgba(63,163,77,.15)}
+  .check{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink);cursor:pointer}
+  .check input{width:17px;height:17px;accent-color:var(--verde)}
+  #wrapLimite{display:none}
+  #wrapLimite.on{display:block;animation:slide .2s ease}
+  @keyframes slide{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+  .btn{border:none;border-radius:10px;padding:11px 14px;font:inherit;font-weight:600;font-size:14px;
+    cursor:pointer;transition:transform .05s,filter .15s;display:inline-flex;align-items:center;
+    justify-content:center;gap:8px}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--verde);color:#fff}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-accent{background:var(--verde-claro);color:#06301f}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Lista de entregas */
+  .lista{padding:8px 10px 12px;overflow:auto;flex:1;min-height:120px}
+  .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:13px}
+  .item{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border-radius:11px;
+    border:1px solid transparent;cursor:grab}
+  .item:hover{background:#F7FAF7;border-color:var(--line)}
+  .item.dragging{opacity:.4}
+  .item .ord{flex:none;width:24px;height:24px;border-radius:7px;background:var(--verde);color:#fff;
+    font-size:12px;font-weight:600;display:grid;place-items:center;margin-top:1px}
+  .item .info{flex:1;min-width:0}
+  .item .info .nome{font-size:14px;font-weight:600;line-height:1.25}
+  .item .info .end{font-size:12px;color:var(--muted);line-height:1.35;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .meta{display:flex;gap:8px;align-items:center;margin-top:5px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.02em}
+  .tag.pendente{background:#EEF1EF;color:#5A6862}
+  .tag.em_rota{background:#E7EEFE;color:var(--rota)}
+  .tag.concluido{background:#E6F5EC;color:var(--concluido)}
+  .tag.atrasado{background:#FBE9E9;color:var(--atrasado)}
+  .eta{font-size:12px;color:var(--ink)}
+  .eta.late{color:var(--atrasado);font-weight:600}
+  .limite{font-size:11px;color:var(--muted)}
+
+  /* Rota / resumo */
+  .resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border-radius:12px;overflow:hidden;margin:14px 18px 4px}
+  .resumo .cell{background:#fff;padding:13px 14px}
+  .resumo .cell .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .resumo .cell .v{font-size:20px;font-weight:600;margin-top:3px}
+  .resumo .cell .v.saved{color:var(--verde-claro)}
+  .toolbar{display:flex;gap:10px;padding:14px 18px}
+  .saida-box{display:flex;align-items:center;gap:9px;padding:0 18px 14px}
+  .saida-box label{margin:0}
+
+  /* Mapa */
+  #map{flex:1;min-height:340px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+  .map-card{flex:1;display:flex;flex-direction:column;min-height:360px}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:11px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:20;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--atrasado)}
+  .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">F</div>
+  <div>
+    <h1>Floema · Entregas <span class="sub">Gestão</span></h1>
+  </div>
+  <div class="status-dot"><i></i><span id="conn">conectando…</span></div>
+</header>
+
+<div class="grid">
+  <!-- COLUNA ESQUERDA -->
+  <div class="col">
+    <div class="card">
+      <h2>Nova entrega</h2>
+      <form id="form" autocomplete="off">
+        <div class="row two">
+          <div><label>Cliente</label><input type="text" id="cliente" placeholder="Nome"></div>
+          <div><label>WhatsApp</label><input type="tel" id="telefone" placeholder="(84) 90000-0000"></div>
+        </div>
+        <div class="row cep">
+          <div><label>CEP</label><input type="text" id="cep" placeholder="59000-000" maxlength="9"></div>
+          <div><label>Endereço</label><input type="text" id="endereco" placeholder="Rua / Av."></div>
+        </div>
+        <div class="row two">
+          <div><label>Número</label><input type="text" id="numero" placeholder="123"></div>
+          <div><label>Bairro</label><input type="text" id="bairro" placeholder="Bairro"></div>
+        </div>
+        <div class="row two">
+          <div><label>Cidade</label><input type="text" id="cidade" placeholder="Natal"></div>
+          <div><label>UF</label><input type="text" id="uf" placeholder="RN" maxlength="2"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="temLimite"> Tem limite de horário</label>
+        <div id="wrapLimite">
+          <label>Horário limite</label><input type="time" id="limiteHorario">
+        </div>
+        <button type="submit" class="btn btn-primary" id="btnAdd">Adicionar entrega</button>
+      </form>
+    </div>
+
+    <div class="card col" style="flex:1;min-height:0">
+      <h2 style="padding-bottom:6px">Entregas do dia <span id="count" class="mono" style="color:var(--verde-claro)"></span></h2>
+      <div class="lista" id="lista"><div class="empty">Nenhuma entrega ainda.</div></div>
+    </div>
+  </div>
+
+  <!-- COLUNA DIREITA -->
+  <div class="col">
+    <div class="card">
+      <h2>Rota</h2>
+      <div class="resumo">
+        <div class="cell"><div class="k">Distância</div><div class="v mono" id="kmTotal">—</div></div>
+        <div class="cell"><div class="k">Economia</div><div class="v mono saved" id="kmEcon">—</div></div>
+        <div class="cell"><div class="k">Paradas</div><div class="v mono" id="paradas">0</div></div>
+      </div>
+      <div class="saida-box">
+        <label>Saída prevista</label>
+        <input type="time" id="saida" style="width:120px">
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-accent" id="btnOtimizar" style="flex:1">Otimizar rota</button>
+        <button class="btn btn-ghost" id="btnLimpar">Limpar tudo</button>
+      </div>
+    </div>
+
+    <div class="card map-card">
+      <div id="map"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================== CONFIG =================== */
+const API_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';          // /exec do Web App
+const GOOGLE_MAPS_BROWSER_KEY = 'COLE_AQUI_A_CHAVE_DO_NAVEGADOR';
+const FLOEMA = { lat: -5.809, lng: -35.201, nome: 'Floema (Tirol)' }; // ajustado no 1º geocode
+/* ============================================= */
+
+let map, dirRenderer, floemaMarker;
+let markers = [];
+let entregas = [];
+let ultimaRota = null;   // {pernas, tempoServicoMin, polyline}
+let trackMarkers = {};
+
+/* ---------- API ---------- */
+async function api(action, extra){
+  const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(Object.assign({action}, extra||{})) });
+  return resp.json();
+}
+
+/* ---------- Mapa ---------- */
+function initMap(){
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: FLOEMA, zoom: 13, disableDefaultUI:true, zoomControl:true,
+    styles:[
+      {featureType:'poi',stylers:[{visibility:'off'}]},
+      {featureType:'transit',stylers:[{visibility:'off'}]},
+      {featureType:'water',stylers:[{color:'#cfe0d8'}]},
+      {featureType:'landscape',stylers:[{color:'#f4f6f3'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]}
+    ]
+  });
+  floemaMarker = new google.maps.Marker({
+    position:FLOEMA, map,
+    label:{text:'F',color:'#fff',fontWeight:'700'},
+    icon:{path:google.maps.SymbolPath.CIRCLE,scale:13,fillColor:'#0E4D3A',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
+    title:'Floema'
+  });
+  document.getElementById('conn').textContent = 'ao vivo';
+  carregar();
+  setInterval(atualizarRastreio, 15000);
+  atualizarRastreio();
+}
+window.initMap = initMap;
+
+/* ---------- ViaCEP ---------- */
+document.getElementById('cep').addEventListener('blur', async e=>{
+  const cep = e.target.value.replace(/\D/g,'');
+  if(cep.length!==8) return;
+  try{
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await r.json();
+    if(d.erro){ toast('CEP não encontrado','err'); return; }
+    if(d.logradouro) end.value = d.logradouro;
+    if(d.bairro) bairro.value = d.bairro;
+    if(d.localidade) cidade.value = d.localidade;
+    if(d.uf) uf.value = d.uf;
+    numero.focus();
+  }catch(_){ toast('Erro ao consultar CEP','err'); }
+});
+const end = document.getElementById('endereco');
+const bairro = document.getElementById('bairro');
+const cidade = document.getElementById('cidade');
+const uf = document.getElementById('uf');
+const numero = document.getElementById('numero');
+
+/* CEP máscara simples */
+document.getElementById('cep').addEventListener('input', e=>{
+  let v=e.target.value.replace(/\D/g,'').slice(0,8);
+  e.target.value = v.length>5 ? v.slice(0,5)+'-'+v.slice(5) : v;
+});
+
+/* checkbox limite */
+document.getElementById('temLimite').addEventListener('change', e=>{
+  document.getElementById('wrapLimite').classList.toggle('on', e.target.checked);
+});
+
+/* ---------- Cadastro ---------- */
+document.getElementById('form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn = document.getElementById('btnAdd');
+  const ent = {
+    cliente: cliente.value.trim(), telefone: telefone.value.trim(),
+    cep: cep.value.trim(), endereco: end.value.trim(), numero: numero.value.trim(),
+    bairro: bairro.value.trim(), cidade: cidade.value.trim(), uf: uf.value.trim(),
+    temLimite: temLimite.checked, limiteHorario: limiteHorario.value
+  };
+  if(!ent.endereco || !ent.numero){ toast('Preencha endereço e número','err'); return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Localizando…';
+  const r = await api('save',{entrega:ent});
+  btn.disabled=false; btn.textContent='Adicionar entrega';
+  if(!r.ok){ toast(r.erro||'Falha ao salvar','err'); return; }
+  e.target.reset();
+  document.getElementById('wrapLimite').classList.remove('on');
+  toast('Entrega adicionada');
+  carregar();
+});
+const cliente=document.getElementById('cliente'), telefone=document.getElementById('telefone'),
+      cep=document.getElementById('cep'), temLimite=document.getElementById('temLimite'),
+      limiteHorario=document.getElementById('limiteHorario');
+
+/* ---------- Carregar / render ---------- */
+async function carregar(){
+  const r = await api('list');
+  if(!r.ok) return;
+  entregas = r.entregas;
+  render();
+  desenharMarcadores();
+}
+
+function render(){
+  const lista = document.getElementById('lista');
+  document.getElementById('count').textContent = entregas.length ? '· '+entregas.length : '';
+  document.getElementById('paradas').textContent = entregas.filter(e=>e.status!=='concluido').length;
+  if(!entregas.length){ lista.innerHTML='<div class="empty">Nenhuma entrega ainda.</div>'; return; }
+
+  const etas = calcularETAs();
+  lista.innerHTML='';
+  entregas.forEach((e,i)=>{
+    const div=document.createElement('div');
+    div.className='item'; div.draggable=true; div.dataset.id=e.id;
+    let etaHtml='';
+    if(etas && etas[i]){
+      const late = etas[i].late;
+      etaHtml = `<span class="eta ${late?'late':''}">chega ${etas[i].hhmm}</span>`;
+    }
+    let limiteHtml = e.temLimite && e.limiteHorario ? `<span class="limite">limite ${e.limiteHorario}</span>` : '';
+    let status = e.status || 'pendente';
+    if(etas && etas[i] && etas[i].late && status!=='concluido') status='atrasado';
+    div.innerHTML=`
+      <div class="ord">${i+1}</div>
+      <div class="info">
+        <div class="nome">${e.cliente||'Sem nome'}</div>
+        <div class="end">${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
+        <div class="meta">
+          <span class="tag ${status}">${rotulo(status)}</span>
+          ${etaHtml} ${limiteHtml}
+        </div>
+      </div>`;
+    lista.appendChild(div);
+  });
+  ativarDrag();
+}
+
+function rotulo(s){return {pendente:'Pendente',em_rota:'Em rota',concluido:'Concluída',atrasado:'Atrasada'}[s]||s;}
+
+/* ETA a partir da última rota otimizada + horário de saída */
+function calcularETAs(){
+  if(!ultimaRota || !ultimaRota.pernas) return null;
+  const saidaStr = document.getElementById('saida').value;
+  if(!saidaStr) return null;
+  const base = hojeComHora(saidaStr);
+  const serv = (ultimaRota.tempoServicoMin||5)*60*1000;
+  const pernas = ultimaRota.pernas; // [Floema->p1, p1->p2, ...]
+  let t = base.getTime();
+  const out=[];
+  const pendentes = entregas.filter(e=>e.status!=='concluido');
+  for(let i=0;i<pendentes.length;i++){
+    t += (pernas[i]?pernas[i].segundos*1000:0);
+    const chegada = new Date(t);
+    let late=false;
+    const e=pendentes[i];
+    if(e.temLimite && e.limiteHorario){
+      const lim=hojeComHora(e.limiteHorario);
+      if(chegada>lim) late=true;
+    }
+    out.push({hhmm:hhmm(chegada), late});
+    t += serv;
+  }
+  // mapear de volta para o índice geral (concluídas não têm ETA)
+  const full=[]; let k=0;
+  entregas.forEach(e=>{ full.push(e.status==='concluido'?null:out[k++]); });
+  return full;
+}
+function hojeComHora(hhmm){const [h,m]=hhmm.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d;}
+function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+
+/* ---------- Drag & drop reordenar ---------- */
+function ativarDrag(){
+  const lista=document.getElementById('lista');
+  let dragEl=null;
+  lista.querySelectorAll('.item').forEach(it=>{
+    it.addEventListener('dragstart',()=>{dragEl=it;it.classList.add('dragging');});
+    it.addEventListener('dragend',async()=>{
+      it.classList.remove('dragging');dragEl=null;
+      const ids=[...lista.querySelectorAll('.item')].map(x=>x.dataset.id);
+      const ordens=ids.map((id,i)=>({id,ordem:i+1}));
+      await api('updateOrder',{ordens});
+      await carregar();
+    });
+  });
+  lista.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const after=[...lista.querySelectorAll('.item:not(.dragging)')].find(el=>{
+      const r=el.getBoundingClientRect();return e.clientY < r.top + r.height/2;
+    });
+    if(!dragEl) return;
+    if(after) lista.insertBefore(dragEl,after); else lista.appendChild(dragEl);
+  });
+}
+
+/* ---------- Marcadores ---------- */
+function desenharMarcadores(){
+  markers.forEach(m=>m.setMap(null)); markers=[];
+  const bounds=new google.maps.LatLngBounds();
+  bounds.extend(FLOEMA);
+  entregas.filter(e=>e.lat&&e.lng).forEach((e,i)=>{
+    const cor = e.status==='concluido' ? '#16A34A' : '#0E4D3A';
+    const m=new google.maps.Marker({
+      position:{lat:e.lat,lng:e.lng},map,
+      label:{text:String(i+1),color:'#fff',fontSize:'12px',fontWeight:'600'},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:cor,fillOpacity:1,strokeColor:'#fff',strokeWeight:2}
+    });
+    const info=new google.maps.InfoWindow({content:`<strong>${e.cliente||''}</strong><br>${e.endereco}, ${e.numero}`});
+    m.addListener('click',()=>info.open(map,m));
+    markers.push(m); bounds.extend({lat:e.lat,lng:e.lng});
+  });
+  if(markers.length) map.fitBounds(bounds,60);
+}
+
+/* ---------- Otimizar ---------- */
+document.getElementById('btnOtimizar').addEventListener('click', async()=>{
+  const btn=document.getElementById('btnOtimizar');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Calculando…';
+  const r=await api('optimize');
+  btn.disabled=false; btn.textContent='Otimizar rota';
+  if(!r.ok){ toast(r.erro||'Falha ao otimizar','err'); return; }
+  ultimaRota = { pernas:r.pernas, tempoServicoMin:r.tempoServicoMin, polyline:r.polyline };
+  document.getElementById('kmTotal').textContent = r.kmOtimizada.toFixed(1)+' km';
+  document.getElementById('kmEcon').textContent = (r.economiaKm!=null?'−'+r.economiaKm.toFixed(1):'—')+' km';
+  desenharRota(r.polyline);
+  await carregar();
+  toast(r.economiaKm>0?`Rota otimizada · ${r.economiaKm.toFixed(1)} km economizados`:'Rota otimizada');
+});
+
+function desenharRota(encoded){
+  if(dirRenderer) dirRenderer.setMap(null);
+  if(!encoded) return;
+  const path = google.maps.geometry.encoding.decodePath(encoded);
+  dirRenderer = new google.maps.Polyline({
+    path, map, strokeColor:'#3FA34D', strokeOpacity:.9, strokeWeight:5
+  });
+}
+
+document.getElementById('saida').addEventListener('change', render);
+
+/* ---------- Limpar ---------- */
+document.getElementById('btnLimpar').addEventListener('click', async()=>{
+  if(!confirm('Apagar todas as entregas de teste?')) return;
+  await api('clear'); ultimaRota=null;
+  if(dirRenderer) dirRenderer.setMap(null);
+  document.getElementById('kmTotal').textContent='—';
+  document.getElementById('kmEcon').textContent='—';
+  carregar(); toast('Lista limpa');
+});
+
+/* ---------- Rastreio motoqueiro ---------- */
+async function atualizarRastreio(){
+  const r=await api('getTrack');
+  if(!r.ok) return;
+  r.posicoes.forEach(p=>{
+    if(!p.lat||!p.lng) return;
+    const pos={lat:p.lat,lng:p.lng};
+    if(trackMarkers[p.motoqueiro]){ trackMarkers[p.motoqueiro].setPosition(pos); }
+    else{
+      trackMarkers[p.motoqueiro]=new google.maps.Marker({
+        position:pos,map,title:p.motoqueiro,zIndex:999,
+        icon:{path:'M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z',
+          fillColor:'#2563EB',fillOpacity:1,strokeColor:'#fff',strokeWeight:2,scale:1.6,
+          anchor:new google.maps.Point(12,22)}
+      });
+    }
+  });
+}
+
+/* ---------- Toast ---------- */
+let toastT;
+function toast(msg,tipo){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(tipo==='err'?' err':'');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',2600);
+}
+
+/* ---------- Bootstrap Maps ---------- */
+(function(){
+  const s=document.createElement('script');
+  s.src=`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_BROWSER_KEY}&libraries=geometry&callback=initMap&language=pt-BR&region=BR`;
+  s.async=true; s.defer=true;
+  s.onerror=()=>{document.getElementById('conn').textContent='erro no mapa';};
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
