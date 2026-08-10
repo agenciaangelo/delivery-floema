@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0E4D3A">
+<title>Floema — Entregador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde:#0E4D3A; --verde-claro:#3FA34D; --bg:#F4F6F3; --surface:#fff;
+    --ink:#16211C; --muted:#6B7A72; --line:#E4EAE5;
+    --atual:#0E4D3A; --wpp:#25D366; --atrasado:#DC2626;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+  header{background:var(--verde);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;
+    position:sticky;top:0;z-index:5}
+  header .logo{width:30px;height:30px;border-radius:8px;background:var(--verde-claro);display:grid;
+    place-items:center;font-weight:700}
+  header h1{font-size:15px;margin:0;font-weight:600}
+  header .gps{margin-left:auto;font-size:12px;display:flex;align-items:center;gap:6px;opacity:.9}
+  header .gps i{width:8px;height:8px;border-radius:50%;background:#9AA;display:inline-block}
+  header .gps.on i{background:var(--verde-claro);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .wrap{max-width:520px;margin:0 auto;padding:16px 14px 90px}
+
+  /* Login */
+  .login{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 20px;margin-top:8px}
+  .login h2{margin:0 0 4px;font-size:18px}
+  .login p{margin:0 0 18px;color:var(--muted);font-size:13px}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500}
+  input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:11px;font:inherit;
+    font-size:16px;margin-bottom:14px}
+  input:focus{outline:none;border-color:var(--verde-claro);box-shadow:0 0 0 3px rgba(63,163,77,.15)}
+
+  .btn{width:100%;border:none;border-radius:12px;padding:15px;font:inherit;font-weight:600;font-size:16px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--verde);color:#fff}
+  .btn-verde{background:var(--verde-claro);color:#06301f}
+  .btn-wpp{background:var(--wpp);color:#fff}
+  .btn-nav{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}
+  .btn:disabled{opacity:.5}
+
+  /* Resumo topo */
+  .topo{display:flex;gap:10px;margin-bottom:14px}
+  .topo .box{flex:1;background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px 14px;text-align:center}
+  .topo .box .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .topo .box .v{font-size:20px;font-weight:700;margin-top:2px}
+
+  /* Cards de parada */
+  .stop{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;
+    position:relative;transition:.2s}
+  .stop.done{opacity:.55}
+  .stop.atual{border-color:var(--verde);box-shadow:0 0 0 3px rgba(14,77,58,.10)}
+  .stop .head{display:flex;align-items:center;gap:12px}
+  .stop .n{width:34px;height:34px;border-radius:10px;background:#EEF1EF;color:var(--muted);
+    display:grid;place-items:center;font-weight:700;font-size:15px;flex:none}
+  .stop.atual .n{background:var(--verde);color:#fff}
+  .stop.done .n{background:var(--verde-claro);color:#06301f}
+  .stop .nome{font-size:16px;font-weight:600;line-height:1.2}
+  .stop .end{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .stop .eta{margin-left:auto;text-align:right;flex:none}
+  .stop .eta .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .stop .eta .hh{font-size:17px;font-weight:700}
+  .stop .eta.late .hh{color:var(--atrasado)}
+  .stop .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;
+    margin-top:8px}
+  .badge.late{background:#FBE9E9;color:var(--atrasado)}
+  .badge.limite{background:#EEF1EF;color:#5A6862}
+  .stop .acoes{display:flex;gap:10px;margin-top:14px}
+  .stop .acoes .btn{font-size:14px;padding:12px}
+  .stop.done .acoes{display:none}
+  .stop:not(.atual) .acoes{display:none}
+
+  .fim{text-align:center;padding:30px 16px;color:var(--muted)}
+  .fim strong{display:block;font-size:18px;color:var(--verde);margin-bottom:4px}
+
+  footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    padding:10px 14px;display:flex;gap:10px;max-width:520px;margin:0 auto}
+  footer .btn{font-size:14px;padding:12px}
+
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:11px;font-size:14px;opacity:0;
+    pointer-events:none;transition:.25s;z-index:20}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--atrasado)}
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">F</div>
+  <h1>Floema · Entregas</h1>
+  <div class="gps" id="gps"><i></i><span>GPS</span></div>
+</header>
+
+<div class="wrap">
+  <!-- LOGIN -->
+  <div class="login" id="login">
+    <h2>Iniciar rota</h2>
+    <p>Seu nome e o horário de saída para calcular a previsão de chegada.</p>
+    <label>Seu nome</label>
+    <input type="text" id="nome" placeholder="Ex.: Carlos">
+    <label>Horário de saída</label>
+    <input type="time" id="saida">
+    <button class="btn btn-primary" id="btnIniciar">Iniciar rota</button>
+  </div>
+
+  <!-- ROTA -->
+  <div id="rota" style="display:none">
+    <div class="topo">
+      <div class="box"><div class="k">Restantes</div><div class="v mono" id="qtdRest">0</div></div>
+      <div class="box"><div class="k">Concluídas</div><div class="v mono" id="qtdFeito">0</div></div>
+      <div class="box"><div class="k">Distância</div><div class="v mono" id="kmTotal">—</div></div>
+    </div>
+    <div id="stops"></div>
+  </div>
+</div>
+
+<footer id="footer" style="display:none">
+  <button class="btn btn-nav" id="btnEncerrar" style="flex:1">Encerrar rota</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================== CONFIG =================== */
+const API_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';   // mesma /exec do painel
+/* ============================================= */
+
+let estado = null; // {nome, saida, entregas[], pernas[], tempoServico, concluidas:{id:isoTime}}
+let watchId = null;
+let ultimoEnvioGPS = 0;
+
+/* ---------- API ---------- */
+async function api(action, extra){
+  const resp = await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({action},extra||{}))});
+  return resp.json();
+}
+
+/* ---------- Persistência local (sobrevive a recarregar a tela) ---------- */
+function salvar(){ try{ localStorage.setItem('floema_rota', JSON.stringify(estado)); }catch(_){} }
+function restaurar(){
+  try{ const s=localStorage.getItem('floema_rota'); if(s){ estado=JSON.parse(s); return true; } }catch(_){}
+  return false;
+}
+
+/* ---------- Iniciar ---------- */
+document.getElementById('btnIniciar').addEventListener('click', async()=>{
+  const nome=document.getElementById('nome').value.trim();
+  const saida=document.getElementById('saida').value;
+  if(!nome){ toast('Digite seu nome','err'); return; }
+  if(!saida){ toast('Informe a saída','err'); return; }
+  const btn=document.getElementById('btnIniciar');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Montando rota…';
+  const r=await api('optimize');
+  btn.disabled=false; btn.textContent='Iniciar rota';
+  if(!r.ok){ toast(r.erro||'Sem entregas para roteirizar','err'); return; }
+  estado={ nome, saida, entregas:r.entregas, pernas:r.pernas,
+           tempoServico:r.tempoServicoMin||5, kmTotal:r.kmOtimizada, concluidas:{} };
+  salvar(); iniciarGPS(); mostrarRota();
+});
+
+/* ---------- Render rota ---------- */
+function mostrarRota(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('rota').style.display='block';
+  document.getElementById('footer').style.display='flex';
+  render();
+}
+
+function pendentes(){ return estado.entregas.filter(e=>!estado.concluidas[e.id]); }
+
+function calcularETAs(){
+  // parte do horário da última conclusão (ou da saída) e encadeia as pernas restantes
+  const feitas = Object.keys(estado.concluidas).length;
+  const ultima = Object.values(estado.concluidas).sort().pop();
+  let t = ultima ? new Date(ultima).getTime() : hojeComHora(estado.saida).getTime();
+  const serv = estado.tempoServico*60*1000;
+  const etas = {};
+  const pend = pendentes();
+  pend.forEach((e,i)=>{
+    // índice global da parada (1-based) na ordem original -> perna que chega nela
+    const idxGlobal = estado.entregas.findIndex(x=>x.id===e.id)+1;
+    const perna = estado.pernas[idxGlobal-1] || estado.pernas[feitas+i];
+    t += (perna?perna.segundos*1000:0);
+    const chegada=new Date(t);
+    let late=false;
+    if(e.temLimite && e.limiteHorario && chegada>hojeComHora(e.limiteHorario)) late=true;
+    etas[e.id]={hhmm:hhmm(chegada), late};
+    t += serv;
+  });
+  return etas;
+}
+function hojeComHora(hhmm){const[h,m]=hhmm.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d;}
+function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+
+function render(){
+  const pend=pendentes();
+  const feito=Object.keys(estado.concluidas).length;
+  document.getElementById('qtdRest').textContent=pend.length;
+  document.getElementById('qtdFeito').textContent=feito;
+  document.getElementById('kmTotal').textContent=estado.kmTotal?estado.kmTotal.toFixed(1)+' km':'—';
+
+  const etas=calcularETAs();
+  const cont=document.getElementById('stops');
+  cont.innerHTML='';
+
+  if(!pend.length){
+    cont.innerHTML='<div class="fim"><strong>Rota concluída! 🎉</strong>Todas as entregas foram feitas.</div>';
+    return;
+  }
+
+  estado.entregas.forEach((e,i)=>{
+    const done=!!estado.concluidas[e.id];
+    const atual = !done && pend[0] && pend[0].id===e.id;
+    const eta=etas[e.id];
+    const div=document.createElement('div');
+    div.className='stop'+(done?' done':'')+(atual?' atual':'');
+    let badge='';
+    if(eta && eta.late) badge='<span class="badge late">Fora do limite</span>';
+    else if(e.temLimite && e.limiteHorario) badge=`<span class="badge limite">Limite ${e.limiteHorario}</span>`;
+
+    const etaBox = done ? `<div class="eta"><div class="lbl">Feita</div><div class="hh mono">✓</div></div>`
+      : eta ? `<div class="eta ${eta.late?'late':''}"><div class="lbl">Chega</div><div class="hh mono">${eta.hhmm}</div></div>` : '';
+
+    const maps=`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`;
+    div.innerHTML=`
+      <div class="head">
+        <div class="n">${i+1}</div>
+        <div style="min-width:0">
+          <div class="nome">${e.cliente||'Sem nome'}</div>
+          <div class="end">${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
+          ${badge}
+        </div>
+        ${etaBox}
+      </div>
+      <div class="acoes">
+        <a class="btn btn-nav" style="flex:1;text-decoration:none" href="${maps}" target="_blank">Navegar</a>
+        <button class="btn btn-verde" style="flex:1" onclick="concluir('${e.id}')">Concluir</button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+/* ---------- Concluir + avisar próximo ---------- */
+window.concluir = async function(id){
+  estado.concluidas[id]=new Date().toISOString();
+  salvar();
+  await api('updateStatus',{id,status:'concluido'});
+  render();
+  toast('Entrega concluída');
+  // avisar o novo próximo cliente
+  const prox=pendentes()[0];
+  if(prox) avisarProximo(prox);
+};
+
+function avisarProximo(e){
+  const etas=calcularETAs();
+  const eta=etas[e.id];
+  if(!e.telefone){ toast('Próximo cliente sem WhatsApp cadastrado'); return; }
+  const tel = e.telefone.replace(/\D/g,'');
+  const fone = tel.length<=11 ? '55'+tel : tel;
+  const msg = `Olá${e.cliente?' '+e.cliente:''}! Aqui é da Floema 🌿 Sua entrega é a próxima`
+    + (eta?`, com chegada prevista para as ${eta.hhmm}`:'')+`. Já estamos a caminho!`;
+  const url=`https://wa.me/${fone}?text=${encodeURIComponent(msg)}`;
+  // abre confirmação leve para o motoqueiro disparar
+  if(confirm(`Avisar ${e.cliente||'próximo cliente'} pelo WhatsApp?`)) window.open(url,'_blank');
+}
+
+/* ---------- GPS ---------- */
+function iniciarGPS(){
+  if(!navigator.geolocation){ toast('GPS indisponível','err'); return; }
+  document.getElementById('gps').classList.add('on');
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const agora=Date.now();
+    if(agora-ultimoEnvioGPS<15000) return; // throttle 15s
+    ultimoEnvioGPS=agora;
+    api('saveTrack',{motoqueiro:estado.nome,lat:pos.coords.latitude,lng:pos.coords.longitude});
+  }, err=>{
+    document.getElementById('gps').classList.remove('on');
+    toast('Ative a localização','err');
+  }, {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
+}
+
+/* ---------- Encerrar ---------- */
+document.getElementById('btnEncerrar').addEventListener('click',()=>{
+  if(!confirm('Encerrar a rota atual?')) return;
+  if(watchId) navigator.geolocation.clearWatch(watchId);
+  localStorage.removeItem('floema_rota'); estado=null;
+  location.reload();
+});
+
+/* ---------- Toast ---------- */
+let toastT;
+function toast(msg,tipo){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(tipo==='err'?' err':'');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',2600);
+}
+
+/* ---------- Retomar sessão ---------- */
+(function(){
+  if(restaurar() && estado && estado.entregas){ iniciarGPS(); mostrarRota(); }
+  else { const now=new Date(); document.getElementById('saida').value=hhmm(now); }
+})();
+</script>
+</body>
+</html>
