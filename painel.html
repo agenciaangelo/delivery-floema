@@ -97,6 +97,31 @@
   .tag.atrasado{background:#FBE9E9;color:var(--atrasado)}
   .eta{font-size:12px} .eta.late{color:var(--atrasado);font-weight:600}
   .limite{font-size:11px;color:var(--muted)}
+  .quem{font-size:11px;font-weight:600;color:var(--rota);display:inline-flex;align-items:center;gap:3px}
+  .item{cursor:pointer}
+
+  /* Modal de detalhes */
+  .modal{position:fixed;inset:0;background:rgba(16,33,28,.45);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+  .modal.on{display:flex}
+  .modal-card{background:#fff;border-radius:16px;max-width:440px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;background:#fff}
+  .modal-head .mh-info{flex:1;min-width:0}
+  .modal-head .mh-ped{font-size:12px;color:var(--ouro);font-weight:700}
+  .modal-head .mh-nome{font-size:18px;font-weight:700;line-height:1.2}
+  .modal-head .fechar{border:none;background:#F1F5F1;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer;color:var(--muted);flex:none}
+  .modal-body{padding:16px 20px 20px}
+  .mrow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .mrow:last-child{border-bottom:none}
+  .mrow .k{color:var(--muted)} .mrow .v{font-weight:600;text-align:right}
+  .mrow .v.eta{color:var(--verde)} .mrow .v.eta.late{color:var(--atrasado)}
+  .mrow .v.quem-v{color:var(--rota)}
+  .mdestaque{background:#EEF4EF;border-radius:11px;padding:12px 14px;margin-bottom:14px;display:flex;gap:10px}
+  .mdestaque .box{flex:1;text-align:center}
+  .mdestaque .box .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .mdestaque .box .v{font-size:16px;font-weight:700;margin-top:2px}
+  .mdestaque .box .v.late{color:var(--atrasado)}
+  .macoes{display:flex;gap:9px;margin-top:16px}
+  .macoes .btn{flex:1}
 
   /* Rota */
   .rotaInfo{margin:0 18px;padding:10px 12px;background:#EEF4EF;border-radius:10px;font-size:12px;color:var(--verde);
@@ -122,7 +147,18 @@
   .dashcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
   .dashcard h3{margin:0 0 16px;font-size:16px;display:flex;align-items:center;gap:8px}
   .dashcard h3 span{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .dashfiltros{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+  .presets{display:flex;gap:6px;flex-wrap:wrap}
+  .preset{border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .preset.on{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .campos{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  .campos label{font-size:12px;color:var(--muted);font-weight:500;display:flex;flex-direction:column;gap:5px;margin:0}
+  .campos input,.campos select{padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px;background:#fff}
+  .campos .btn-sm{padding:10px 18px}
+  .periodoLbl{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .periodoLbl b{color:var(--ink);font-weight:600}
   .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
+  @media(min-width:640px){.kpis{grid-template-columns:repeat(3,1fr)}}
   .kpi{background:var(--bg);border-radius:12px;padding:14px 16px}
   .kpi .n{font-size:26px;font-weight:700} .kpi .n.g{color:var(--concluido)} .kpi .n.r{color:var(--atrasado)}
   .kpi .l{font-size:12px;color:var(--muted);margin-top:2px}
@@ -227,17 +263,48 @@
 
 <!-- ===================== DASHBOARD ===================== -->
 <div id="tabDash">
-  <div class="dashcard">
-    <h3>Esta semana <span>a partir de segunda</span> <span class="info">i<span class="bub">Números das entregas com data desta semana (segunda até hoje). Km vem das rotas geradas no período.</span></span></h3>
-    <div class="kpis" id="kpiSemana"></div>
+  <div class="dashcard" style="grid-column:1/-1">
+    <h3>Indicadores <span class="info">i<span class="bub">Escolha um período pronto ou defina De/Até. Filtre por entregador para ver só os números dele.</span></span></h3>
+    <div class="dashfiltros">
+      <div class="presets">
+        <button class="preset on" data-p="semana">Esta semana</button>
+        <button class="preset" data-p="mes">Este mês</button>
+        <button class="preset" data-p="hoje">Hoje</button>
+        <button class="preset" data-p="7">Últimos 7 dias</button>
+        <button class="preset" data-p="30">Últimos 30 dias</button>
+      </div>
+      <div class="campos">
+        <label>De<input type="date" id="dashDe"></label>
+        <label>Até<input type="date" id="dashAte"></label>
+        <label>Entregador<select id="dashMoto"><option value="">Todos os entregadores</option></select></label>
+        <button class="btn btn-accent btn-sm" id="dashAplicar">Aplicar</button>
+      </div>
+    </div>
+    <div class="periodoLbl" id="periodoLbl"></div>
+    <div class="kpis" id="kpiDash"></div>
     <table class="tabela"><thead><tr><th>Entregador</th><th>Feitas</th><th>Não entreg.</th><th>Total</th></tr></thead>
-      <tbody id="tblSemana"></tbody></table>
+      <tbody id="tblDash"></tbody></table>
   </div>
-  <div class="dashcard">
-    <h3>Este mês <span id="mesLbl"></span> <span class="info">i<span class="bub">Entregas com data neste mês, do dia 1 até hoje, agrupadas por entregador.</span></span></h3>
-    <div class="kpis" id="kpiMes"></div>
-    <table class="tabela"><thead><tr><th>Entregador</th><th>Feitas</th><th>Não entreg.</th><th>Total</th></tr></thead>
-      <tbody id="tblMes"></tbody></table>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mh-info">
+        <div class="mh-ped" id="mPed"></div>
+        <div class="mh-nome" id="mNome"></div>
+        <span class="tag" id="mStatus" style="margin-top:6px;display:inline-block"></span>
+      </div>
+      <button class="fechar" onclick="fecharDetalhe()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="mdestaque">
+        <div class="box"><div class="k">Previsão de chegada</div><div class="v" id="mEta">—</div></div>
+        <div class="box"><div class="k">Entregador</div><div class="v" id="mQuem" style="color:var(--rota)">—</div></div>
+      </div>
+      <div id="mLinhas"></div>
+      <div class="macoes" id="mAcoes"></div>
+    </div>
   </div>
 </div>
 
@@ -385,16 +452,71 @@ function render(){
     }
     const limiteHtml=e.temLimite&&e.limiteHorario?`<span class="limite">limite ${e.limiteHorario}</span>`:'';
     const pedHtml=e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:'';
+    const quemHtml=e.motoqueiro?`<span class="quem">🏍️ ${e.motoqueiro}</span>`:'';
     const obsHtml=e.observacao?`<div class="obs">"${e.observacao}"</div>`:'';
     div.innerHTML=`<div class="ord">${i+1}</div><div class="info">
       <div class="nome">${pedHtml}${e.cliente||'Sem nome'}</div>
       <div class="end">${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
-      <div class="meta"><span class="tag ${status}">${rotulo(status)}</span>${etaHtml}${limiteHtml}</div>${obsHtml}</div>`;
+      <div class="meta"><span class="tag ${status}">${rotulo(status)}</span>${etaHtml}${quemHtml}${limiteHtml}</div>${obsHtml}</div>`;
+    div.addEventListener('click',()=>{ if(!div._arrastou) abrirDetalhe(e.id); });
     lista.appendChild(div);
   });
   ativarDrag();
 }
 function rotulo(s){return {pendente:'Pendente',em_rota:'Em rota',concluido:'Concluída',nao_entregue:'Não entregue',adiado:'Adiada',atrasado:'Atrasada'}[s]||s;}
+
+/* Detalhes da entrega (modal) */
+function abrirDetalhe(id){
+  const e=entregas.find(x=>x.id===id); if(!e)return;
+  const idx=entregas.findIndex(x=>x.id===id);
+  const etas=calcularETAs();
+  let status=e.status||'pendente';
+  if(etas&&etas[idx]&&etas[idx].late&&status==='pendente')status='atrasado';
+
+  $('mPed').textContent=e.numeroPedido?'Pedido #'+e.numeroPedido:'';
+  $('mNome').textContent=e.cliente||'Sem nome';
+  const st=$('mStatus'); st.className='tag '+status; st.textContent=rotulo(status);
+
+  // destaque: ETA + entregador
+  const etaBox=$('mEta');
+  if(status==='concluido'){etaBox.textContent='Concluída';etaBox.className='v';}
+  else if(status==='nao_entregue'){etaBox.textContent='—';etaBox.className='v';}
+  else if(etas&&etas[idx]){etaBox.textContent=etas[idx].hhmm;etaBox.className='v'+(etas[idx].late?' late':'');}
+  else {etaBox.textContent='gere a rota';etaBox.className='v';etaBox.style.fontSize='13px';etaBox.style.color='var(--muted)';}
+  $('mQuem').textContent=e.motoqueiro||'ninguém ainda';
+  $('mQuem').style.color=e.motoqueiro?'var(--rota)':'var(--muted)';
+
+  // linhas de detalhe
+  const linhas=[];
+  linhas.push(['Endereço', `${e.endereco}, ${e.numero}`]);
+  if(e.bairro)linhas.push(['Bairro', e.bairro]);
+  if(e.cidade||e.uf)linhas.push(['Cidade', `${e.cidade||''}${e.uf?'/'+e.uf:''}`]);
+  if(e.cep)linhas.push(['CEP', e.cep]);
+  if(e.telefone)linhas.push(['WhatsApp', formatTel(e.telefone)]);
+  linhas.push(['Data da entrega', labelData(e.dataEntrega)]);
+  if(e.temLimite&&e.limiteHorario)linhas.push(['Limite de horário', e.limiteHorario]);
+  linhas.push(['Posição na rota', (idx+1)+'º']);
+  if(e.horaConclusao)linhas.push(['Concluída às', fmtHora(e.horaConclusao)]);
+  if(e.motivo)linhas.push(['Motivo', e.motivo]);
+  if(e.observacao)linhas.push(['Observação', '"'+e.observacao+'"']);
+  $('mLinhas').innerHTML=linhas.map(([k,v])=>`<div class="mrow"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+
+  // ações
+  const ac=[];
+  if(e.telefone){
+    const tel=e.telefone.replace(/\D/g,''); const fone=tel.length<=11?'55'+tel:tel;
+    ac.push(`<a class="btn btn-ghost" href="tel:${e.telefone}">Ligar</a>`);
+    ac.push(`<a class="btn btn-accent" href="https://wa.me/${fone}" target="_blank" rel="noopener">WhatsApp</a>`);
+  }
+  if(e.lat&&e.lng) ac.push(`<a class="btn btn-primary" href="https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}" target="_blank" rel="noopener">Ver no mapa</a>`);
+  $('mAcoes').innerHTML=ac.join('');
+
+  $('modal').classList.add('on');
+}
+function fecharDetalhe(){ $('modal').classList.remove('on'); }
+function formatTel(t){const d=(t+'').replace(/\D/g,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return t;}
+function fmtHora(iso){try{const d=new Date(iso);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+hhmm(d);}catch(_){return iso;}}
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')fecharDetalhe(); });
 
 /* ETA */
 function calcularETAs(){
@@ -420,9 +542,10 @@ function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMin
 function ativarDrag(){
   const lista=$('lista');let dragEl=null;
   lista.querySelectorAll('.item').forEach(it=>{
-    it.addEventListener('dragstart',()=>{dragEl=it;it.classList.add('dragging');});
+    it.addEventListener('dragstart',()=>{dragEl=it;it._arrastou=true;it.classList.add('dragging');});
     it.addEventListener('dragend',async()=>{
       it.classList.remove('dragging');dragEl=null;
+      setTimeout(()=>{it._arrastou=false;},300);
       const ids=[...lista.querySelectorAll('.item')].map(x=>x.dataset.id);
       await api('updateOrder',{ordens:ids.map((id,i)=>({id,ordem:i+1}))});
       carregar();
@@ -503,17 +626,47 @@ function destacarTrechoAtual(pos){
 }
 
 /* ---------- Dashboard ---------- */
-async function carregarDashboard(){
-  const r=await api('dashboard'); if(!r.ok)return;
-  $('mesLbl').textContent=new Date().toLocaleDateString('pt-BR',{month:'long'});
-  pintarKPIs('kpiSemana',r.semana);pintarTabela('tblSemana',r.semana.porEntregador);
-  pintarKPIs('kpiMes',r.mes);pintarTabela('tblMes',r.mes.porEntregador);
+function presetRange(p){
+  const h=new Date(), f=d=>fmtD(d);
+  if(p==='hoje')return{de:f(h),ate:f(h)};
+  if(p==='semana'){const i=new Date(h);i.setDate(h.getDate()-((h.getDay()+6)%7));return{de:f(i),ate:f(h)};}
+  if(p==='mes'){return{de:f(new Date(h.getFullYear(),h.getMonth(),1)),ate:f(h)};}
+  if(p==='7'){const i=new Date(h);i.setDate(h.getDate()-6);return{de:f(i),ate:f(h)};}
+  if(p==='30'){const i=new Date(h);i.setDate(h.getDate()-29);return{de:f(i),ate:f(h)};}
+  return{de:f(h),ate:f(h)};
 }
+async function carregarDashboard(){
+  // ao abrir a aba, aplica o preset ativo (semana por padrão)
+  const cur=document.querySelector('.preset.on'); const p=cur?cur.dataset.p:'semana';
+  const r=presetRange(p); $('dashDe').value=r.de; $('dashAte').value=r.ate;
+  await aplicarDashboard();
+}
+async function aplicarDashboard(){
+  const de=$('dashDe').value, ate=$('dashAte').value, motoqueiro=$('dashMoto').value;
+  if(de&&ate&&de>ate){toast('A data inicial é maior que a final','err');return;}
+  const r=await api('dashboard',{de,ate,motoqueiro});
+  if(!r.ok)return;
+  const sel=$('dashMoto'), atual=sel.value;
+  sel.innerHTML='<option value="">Todos os entregadores</option>'+(r.entregadores||[]).map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.value=atual;
+  $('periodoLbl').innerHTML=`Período: <b>${labelData(r.de)}</b> a <b>${labelData(r.ate)}</b>`+(r.motoqueiro?` · Entregador: <b>${r.motoqueiro}</b>`:'');
+  pintarKPIs('kpiDash',r); pintarTabela('tblDash',r.porEntregador);
+}
+// eventos dos filtros
+document.addEventListener('click',e=>{
+  const pr=e.target.closest('.preset');
+  if(pr){document.querySelectorAll('.preset').forEach(x=>x.classList.remove('on'));pr.classList.add('on');
+    const r=presetRange(pr.dataset.p);$('dashDe').value=r.de;$('dashAte').value=r.ate;aplicarDashboard();}
+  if(e.target.id==='dashAplicar'){document.querySelectorAll('.preset').forEach(x=>x.classList.remove('on'));aplicarDashboard();}
+});
+document.addEventListener('change',e=>{ if(e.target.id==='dashMoto')aplicarDashboard(); });
 function pintarKPIs(id,d){
   $(id).innerHTML=`
-    <div class="kpi"><div class="n g">${d.concluidas}</div><div class="l">Concluídas</div></div>
-    <div class="kpi"><div class="n r">${d.naoEntregues}</div><div class="l">Não entregues</div></div>
-    <div class="kpi"><div class="n">${d.taxa}%</div><div class="l">Taxa de conclusão</div></div>
+    <div class="kpi"><div class="n">${d.total||0}</div><div class="l">Total de entregas</div></div>
+    <div class="kpi"><div class="n g">${d.concluidas||0}</div><div class="l">Concluídas</div></div>
+    <div class="kpi"><div class="n r">${d.naoEntregues||0}</div><div class="l">Não entregues</div></div>
+    <div class="kpi"><div class="n" style="color:var(--pendente)">${d.pendentes||0}</div><div class="l">Pendentes</div></div>
+    <div class="kpi"><div class="n">${d.taxa||0}%</div><div class="l">Taxa de conclusão</div></div>
     <div class="kpi"><div class="n mono">${d.km||0}</div><div class="l">Km rodados</div></div>`;
 }
 function pintarTabela(id,porE){
