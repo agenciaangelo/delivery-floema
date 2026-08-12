@@ -99,6 +99,8 @@
   .limite{font-size:11px;color:var(--muted)}
   .quem{font-size:11px;font-weight:600;color:var(--rota);display:inline-flex;align-items:center;gap:3px}
   .item{cursor:pointer}
+  .item .ord{cursor:grab} .item .ord:active{cursor:grabbing}
+  .btn-mini{margin-left:auto;padding:7px 12px;font-size:13px}
 
   /* Modal de detalhes */
   .modal{position:fixed;inset:0;background:rgba(16,33,28,.45);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
@@ -207,37 +209,10 @@
       <div class="cal" id="cal"></div>
     </div>
 
-    <div class="card">
-      <h2>Nova entrega <span id="dataSelLbl" class="mono" style="color:var(--verde-claro);text-transform:none;letter-spacing:0"></span></h2>
-      <form id="form" autocomplete="off">
-        <div class="row two">
-          <div><label>Nº do pedido <span class="info">i<span class="bub">Número do pedido no seu sistema, para localizar a entrega depois.</span></span></label><input type="text" id="numeroPedido" placeholder="Ex.: 1042"></div>
-          <div><label>Data da entrega <span class="info right">i<span class="bub">Dia em que a entrega deve ser feita. Pode ser hoje ou um dia futuro — ela entra na rota daquele dia.</span></span></label><input type="date" id="dataEntrega"></div>
-        </div>
-        <div class="row two">
-          <div><label>Cliente</label><input type="text" id="cliente" placeholder="Nome"></div>
-          <div><label>WhatsApp</label><input type="tel" id="telefone" placeholder="(84) 90000-0000"></div>
-        </div>
-        <div class="row cep">
-          <div><label>CEP</label><input type="text" id="cep" placeholder="59000-000" maxlength="9"></div>
-          <div><label>Endereço</label><input type="text" id="endereco" placeholder="Rua / Av."></div>
-        </div>
-        <div class="row two">
-          <div><label>Número</label><input type="text" id="numero" placeholder="123"></div>
-          <div><label>Bairro</label><input type="text" id="bairro" placeholder="Bairro"></div>
-        </div>
-        <div class="row two">
-          <div><label>Cidade</label><input type="text" id="cidade" placeholder="Natal"></div>
-          <div><label>UF</label><input type="text" id="uf" placeholder="RN" maxlength="2"></div>
-        </div>
-        <label class="check"><input type="checkbox" id="temLimite"> Tem limite de horário <span class="info">i<span class="bub">Marque se o cliente precisa receber até certo horário. A rota sinaliza em vermelho quando a previsão de chegada passa desse limite.</span></span></label>
-        <div id="wrapLimite"><label>Horário limite</label><input type="time" id="limiteHorario"></div>
-        <button type="submit" class="btn btn-primary" id="btnAdd">Adicionar entrega</button>
-      </form>
-    </div>
-
     <div class="card col" style="flex:1;min-height:0">
-      <h2>Entregas do dia <span class="info">i<span class="bub">Arraste os cartões para reordenar manualmente — a nova ordem é salva automaticamente. As cores indicam o status de cada entrega.</span></span> <span id="count" class="mono" style="color:var(--verde-claro)"></span></h2>
+      <h2>Entregas do dia <span class="info">i<span class="bub">Clique num cartão para ver os detalhes. Arraste pelo número para reordenar — a nova ordem é salva sozinha.</span></span> <span id="count" class="mono" style="color:var(--verde-claro)"></span>
+        <button type="button" class="btn btn-primary btn-mini" id="btnNova">+ Nova entrega</button>
+      </h2>
       <div class="lista" id="lista"><div class="empty">Selecione um dia no calendário.</div></div>
     </div>
   </div>
@@ -284,6 +259,45 @@
     <div class="kpis" id="kpiDash"></div>
     <table class="tabela"><thead><tr><th>Entregador</th><th>Feitas</th><th>Não entreg.</th><th>Total</th></tr></thead>
       <tbody id="tblDash"></tbody></table>
+  </div>
+</div>
+
+<div class="modal" id="modalForm">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mh-info">
+        <div class="mh-nome">Nova entrega</div>
+        <div class="mh-ped" id="formDataLbl" style="color:var(--verde-claro)"></div>
+      </div>
+      <button class="fechar" onclick="fecharFormModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="form" autocomplete="off">
+        <div class="row two">
+          <div><label>Nº do pedido <span class="info">i<span class="bub">Número do pedido no seu sistema, para localizar a entrega depois.</span></span></label><input type="text" id="numeroPedido" placeholder="Ex.: 1042"></div>
+          <div><label>Data da entrega <span class="info right">i<span class="bub">Dia em que a entrega deve ser feita. Pode ser hoje ou um dia futuro — ela entra na rota daquele dia.</span></span></label><input type="date" id="dataEntrega"></div>
+        </div>
+        <div class="row two">
+          <div><label>Cliente</label><input type="text" id="cliente" placeholder="Nome"></div>
+          <div><label>WhatsApp</label><input type="tel" id="telefone" placeholder="(84) 90000-0000"></div>
+        </div>
+        <div class="row cep">
+          <div><label>CEP</label><input type="text" id="cep" placeholder="59000-000" maxlength="9"></div>
+          <div><label>Endereço</label><input type="text" id="endereco" placeholder="Rua / Av."></div>
+        </div>
+        <div class="row two">
+          <div><label>Número</label><input type="text" id="numero" placeholder="123"></div>
+          <div><label>Bairro</label><input type="text" id="bairro" placeholder="Bairro"></div>
+        </div>
+        <div class="row two">
+          <div><label>Cidade</label><input type="text" id="cidade" placeholder="Natal"></div>
+          <div><label>UF</label><input type="text" id="uf" placeholder="RN" maxlength="2"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="temLimite"> Tem limite de horário <span class="info">i<span class="bub">Marque se o cliente precisa receber até certo horário. A rota sinaliza em vermelho quando a previsão de chegada passa desse limite.</span></span></label>
+        <div id="wrapLimite"><label>Horário limite</label><input type="time" id="limiteHorario"></div>
+        <button type="submit" class="btn btn-primary" id="btnAdd">Adicionar entrega</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -418,13 +432,24 @@ $('form').addEventListener('submit',async e=>{
   const dataQueSalvou=ent.dataEntrega;
   e.target.reset();$('wrapLimite').classList.remove('on');$('dataEntrega').value=dataSel;
   toast('Entrega adicionada');
+  fecharFormModal();
   montarCalendario();
   if(dataQueSalvou===dataSel) carregar();
 });
 
+/* ---------- Modal de cadastro ---------- */
+function abrirFormModal(){
+  $('dataEntrega').value=dataSel;
+  $('formDataLbl').textContent='para '+labelData(dataSel);
+  $('modalForm').classList.add('on');
+  setTimeout(()=>$('numeroPedido').focus(),50);
+}
+function fecharFormModal(){ $('modalForm').classList.remove('on'); }
+document.getElementById('btnNova').addEventListener('click',abrirFormModal);
+document.getElementById('modalForm').addEventListener('click',e=>{ if(e.target.id==='modalForm')fecharFormModal(); });
+
 /* ---------- Carregar entregas do dia ---------- */
 async function carregar(){
-  $('dataSelLbl').textContent='· '+labelData(dataSel);
   const r=await api('list',{data:dataSel});
   if(!r.ok)return;
   entregas=r.entregas;
@@ -443,7 +468,7 @@ function render(){
   const etas=calcularETAs();
   lista.innerHTML='';
   entregas.forEach((e,i)=>{
-    const div=document.createElement('div');div.className='item';div.draggable=true;div.dataset.id=e.id;
+    const div=document.createElement('div');div.className='item';div.dataset.id=e.id;
     let status=e.status||'pendente';
     let etaHtml='';
     if(etas&&etas[i]&&status!=='concluido'&&status!=='nao_entregue'){
@@ -454,11 +479,11 @@ function render(){
     const pedHtml=e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:'';
     const quemHtml=e.motoqueiro?`<span class="quem">🏍️ ${e.motoqueiro}</span>`:'';
     const obsHtml=e.observacao?`<div class="obs">"${e.observacao}"</div>`:'';
-    div.innerHTML=`<div class="ord">${i+1}</div><div class="info">
+    div.innerHTML=`<div class="ord" draggable="true" title="Arraste para reordenar">${i+1}</div><div class="info">
       <div class="nome">${pedHtml}${e.cliente||'Sem nome'}</div>
       <div class="end">${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
       <div class="meta"><span class="tag ${status}">${rotulo(status)}</span>${etaHtml}${quemHtml}${limiteHtml}</div>${obsHtml}</div>`;
-    div.addEventListener('click',()=>{ if(!div._arrastou) abrirDetalhe(e.id); });
+    div.addEventListener('click',ev=>{ if(ev.target.closest('.ord'))return; abrirDetalhe(e.id); });
     lista.appendChild(div);
   });
   ativarDrag();
@@ -504,7 +529,7 @@ function abrirDetalhe(id){
   // ações
   const ac=[];
   if(e.telefone){
-    const tel=e.telefone.replace(/\D/g,''); const fone=tel.length<=11?'55'+tel:tel;
+    const tel=(e.telefone+'').replace(/\D/g,''); const fone=tel.length<=11?'55'+tel:tel;
     ac.push(`<a class="btn btn-ghost" href="tel:${e.telefone}">Ligar</a>`);
     ac.push(`<a class="btn btn-accent" href="https://wa.me/${fone}" target="_blank" rel="noopener">WhatsApp</a>`);
   }
@@ -538,24 +563,28 @@ function calcularETAs(){
 function hojeComHora(s){const[h,m]=s.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d;}
 function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 
-/* Drag reorder */
+/* Drag reorder — arrasta pela alça (número) */
 function ativarDrag(){
-  const lista=$('lista');let dragEl=null;
-  lista.querySelectorAll('.item').forEach(it=>{
-    it.addEventListener('dragstart',()=>{dragEl=it;it._arrastou=true;it.classList.add('dragging');});
-    it.addEventListener('dragend',async()=>{
-      it.classList.remove('dragging');dragEl=null;
-      setTimeout(()=>{it._arrastou=false;},300);
+  const lista=$('lista');
+  lista.querySelectorAll('.item .ord').forEach(h=>{
+    const it=h.closest('.item');
+    h.addEventListener('dragstart',ev=>{it.classList.add('dragging');try{ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain','');}catch(_){}});
+    h.addEventListener('dragend',async()=>{
+      it.classList.remove('dragging');
       const ids=[...lista.querySelectorAll('.item')].map(x=>x.dataset.id);
       await api('updateOrder',{ordens:ids.map((id,i)=>({id,ordem:i+1}))});
       carregar();
     });
   });
-  lista.addEventListener('dragover',e=>{
-    e.preventDefault();
-    const after=[...lista.querySelectorAll('.item:not(.dragging)')].find(el=>{const r=el.getBoundingClientRect();return e.clientY<r.top+r.height/2;});
-    if(!dragEl)return; if(after)lista.insertBefore(dragEl,after);else lista.appendChild(dragEl);
-  });
+  if(!lista._dragBound){
+    lista._dragBound=true;
+    lista.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const dragging=lista.querySelector('.dragging'); if(!dragging)return;
+      const after=[...lista.querySelectorAll('.item:not(.dragging)')].find(el=>{const r=el.getBoundingClientRect();return e.clientY<r.top+r.height/2;});
+      if(after)lista.insertBefore(dragging,after);else lista.appendChild(dragging);
+    });
+  }
 }
 
 /* Marcadores */
