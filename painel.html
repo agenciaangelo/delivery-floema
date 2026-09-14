@@ -106,6 +106,24 @@
   .modal{position:fixed;inset:0;background:rgba(16,33,28,.45);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
   .modal.on{display:flex}
   .modal-card{background:#fff;border-radius:16px;max-width:440px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-card.wide{max-width:960px}
+  .imp-topo{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .imp-topo label{font-size:12px;color:var(--muted);font-weight:500;display:flex;flex-direction:column;gap:5px;margin:0}
+  .imp-topo input[type=date]{padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px}
+  .imp-topo .resumo-imp{margin-left:auto;font-size:13px;color:var(--muted)}
+  .imp-topo .resumo-imp b{color:var(--verde);font-size:16px}
+  .imp-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:52vh}
+  table.imp{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+  table.imp th{position:sticky;top:0;background:#F4F6F3;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+  table.imp td{padding:4px 5px;border-bottom:1px solid var(--line)}
+  table.imp input{width:100%;padding:7px 8px;border:1px solid transparent;border-radius:7px;font:inherit;font-size:13px;background:#fff}
+  table.imp input:hover{border-color:var(--line)}
+  table.imp input:focus{outline:none;border-color:var(--verde-claro);box-shadow:0 0 0 2px rgba(63,163,77,.15)}
+  table.imp tr.falha input{background:#FBE9E9}
+  table.imp .rm{border:none;background:#FBE9E9;color:var(--atrasado);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:15px}
+  .imp-acoes{display:flex;gap:10px;margin-top:14px;align-items:center}
+  .imp-acoes .btn{flex:none} .imp-acoes .add{margin-right:auto}
+  .col-ped{width:88px}.col-fone{width:120px}.col-num{width:64px}.col-uf{width:44px}.col-cep{width:92px}.col-rm{width:34px}
   .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;background:#fff}
   .modal-head .mh-info{flex:1;min-width:0}
   .modal-head .mh-ped{font-size:12px;color:var(--ouro);font-weight:700}
@@ -211,8 +229,10 @@
 
     <div class="card col" style="flex:1;min-height:0">
       <h2>Entregas do dia <span class="info">i<span class="bub">Clique num cartão para ver os detalhes. Arraste pelo número para reordenar — a nova ordem é salva sozinha.</span></span> <span id="count" class="mono" style="color:var(--verde-claro)"></span>
-        <button type="button" class="btn btn-primary btn-mini" id="btnNova">+ Nova entrega</button>
+        <button type="button" class="btn btn-ghost btn-mini" id="btnImportar" style="margin-left:auto">Importar PDF</button>
+        <button type="button" class="btn btn-primary btn-mini" id="btnNova" style="margin-left:0">+ Nova entrega</button>
       </h2>
+      <input type="file" id="fileImport" accept="application/pdf" style="display:none">
       <div class="lista" id="lista"><div class="empty">Selecione um dia no calendário.</div></div>
     </div>
   </div>
@@ -259,6 +279,39 @@
     <div class="kpis" id="kpiDash"></div>
     <table class="tabela"><thead><tr><th>Entregador</th><th>Feitas</th><th>Não entreg.</th><th>Total</th></tr></thead>
       <tbody id="tblDash"></tbody></table>
+  </div>
+</div>
+
+<div class="modal" id="modalImport">
+  <div class="modal-card wide">
+    <div class="modal-head">
+      <div class="mh-info">
+        <div class="mh-nome">Conferir importação</div>
+        <div class="mh-ped">Revise, edite, remova ou adicione entregas antes de cadastrar.</div>
+      </div>
+      <button class="fechar" onclick="fecharImport()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="imp-topo">
+        <label>Data da entrega<input type="date" id="impData"></label>
+        <div class="resumo-imp"><b id="impCount">0</b> entregas lidas</div>
+      </div>
+      <div class="imp-wrap">
+        <table class="imp">
+          <thead><tr>
+            <th class="col-ped">Nº pedido</th><th>Cliente</th><th class="col-fone">Fone</th>
+            <th>Endereço</th><th class="col-num">Nº</th><th>Bairro</th><th>Cidade</th>
+            <th class="col-uf">UF</th><th class="col-cep">CEP</th><th class="col-rm"></th>
+          </tr></thead>
+          <tbody id="impBody"></tbody>
+        </table>
+      </div>
+      <div class="imp-acoes">
+        <button type="button" class="btn btn-ghost add" id="impAddRow">+ Adicionar linha</button>
+        <button type="button" class="btn btn-ghost" onclick="fecharImport()">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="impConfirmar">Importar entregas</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -328,7 +381,7 @@
 /* =================== CONFIG =================== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvyOUVIEcVjYoJZwWhRMJ_VQtN9JnMPrThutCRBvH-DQQXd5mKm3mGkxuDtXmmIp6H/exec';
 // ↓ Cole a MESMA chave de navegador que você já usou (a que começa com AIzaSyDngiacf...)
-const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyCvmSmyTTsBd_S6KKoV3f684qSDeP0U0Vc';
+const GOOGLE_MAPS_BROWSER_KEY = 'COLE_AQUI_A_CHAVE_DO_NAVEGADOR';
 /* ============================================= */
 
 let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLine, atualLine;
@@ -402,6 +455,110 @@ function renderCal(contagem){
 }
 function mudaMes(n){calRef.setMonth(calRef.getMonth()+n);montarCalendario();}
 function selData(iso){dataSel=iso;document.getElementById('dataEntrega').value=iso;montarCalendario();carregar();}
+
+/* ---------- Importação de relatório em PDF ---------- */
+let impRows=[];
+function carregarPdfJs(){
+  return new Promise((resolve,reject)=>{
+    if(window.pdfjsLib){resolve();return;}
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve();};
+    s.onerror=()=>reject(new Error('Falha ao carregar leitor de PDF'));
+    document.head.appendChild(s);
+  });
+}
+async function extrairTextoPdf(file){
+  const buf=await file.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+  let texto='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const c=await page.getTextContent();
+    texto+=c.items.map(it=>it.str).join(' ')+'\n';
+  }
+  return texto;
+}
+function parseRelatorio(texto){
+  const flat=texto.replace(/\s+/g,' ');
+  const blocoRe=/ENTREGA:\d-(\d+).*?CLIENTE:(.+?)\s+DATA ENTREGA:\s*(\d{2}\/\d{2}\/\d{4}).*?FONES:\s*(.+?)\s+PER[IÍ]ODO:\s*\S+\s+(.+?N[ºo°]\s*[\w\-]+,\s*.+?,\s*.+?\/\s*[A-Z]{2}\s*-\s*\d{8})/g;
+  const addrRe=/^(.*?)\s+N[ºo°]\s*([\w\-]+),\s*(.+?),\s*(.+?)\/\s*([A-Z]{2})\s*-\s*(\d{8})/;
+  const vistos={}, out=[]; let m;
+  while((m=blocoRe.exec(flat))){
+    const pid=m[1]; if(vistos[pid])continue;
+    const a=addrRe.exec(m[5].trim()); if(!a)continue;
+    vistos[pid]=1;
+    out.push({numeroPedido:pid, cliente:m[2].trim(), telefone:m[4].split('/')[0].trim(),
+      endereco:a[1].trim(), numero:a[2].trim(), bairro:a[3].trim(),
+      cidade:a[4].trim(), uf:a[5].trim(), cep:a[6].trim()});
+  }
+  return {entregas:out, data:out.length?out[0]._data:null, dataBr:(flat.match(/DATA ENTREGA:\s*(\d{2}\/\d{2}\/\d{4})/)||[])[1]};
+}
+function brParaIso(br){ if(!br)return null; const[d,mm,a]=br.split('/'); return `${a}-${mm}-${d}`; }
+
+$('btnImportar').addEventListener('click',()=>$('fileImport').click());
+$('fileImport').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file)return;
+  e.target.value='';
+  const b=$('btnImportar'); b.disabled=true; b.textContent='Lendo…';
+  try{
+    await carregarPdfJs();
+    const texto=await extrairTextoPdf(file);
+    const {entregas,dataBr}=parseRelatorio(texto);
+    if(!entregas.length){toast('Nenhuma entrega reconhecida no PDF','err');return;}
+    impRows=entregas;
+    $('impData').value=brParaIso(dataBr)||dataSel;
+    renderImport();
+    $('modalImport').classList.add('on');
+  }catch(err){toast(err.message||'Erro ao ler PDF','err');}
+  finally{b.disabled=false;b.textContent='Importar PDF';}
+});
+
+function renderImport(){
+  $('impCount').textContent=impRows.length;
+  const campos=['numeroPedido','cliente','telefone','endereco','numero','bairro','cidade','uf','cep'];
+  const cls={numeroPedido:'col-ped',telefone:'col-fone',numero:'col-num',uf:'col-uf',cep:'col-cep'};
+  $('impBody').innerHTML=impRows.map((r,i)=>
+    '<tr>'+campos.map(c=>`<td class="${cls[c]||''}"><input data-i="${i}" data-c="${c}" value="${(r[c]||'').toString().replace(/"/g,'&quot;')}"></td>`).join('')
+    +`<td class="col-rm"><button class="rm" data-rm="${i}" title="Remover">×</button></td></tr>`
+  ).join('');
+}
+$('impBody').addEventListener('input',e=>{
+  const i=e.target.dataset.i, c=e.target.dataset.c;
+  if(i!=null&&c) impRows[i][c]=e.target.value;
+});
+$('impBody').addEventListener('click',e=>{
+  const rm=e.target.dataset.rm;
+  if(rm!=null){ impRows.splice(+rm,1); renderImport(); }
+});
+$('impAddRow').addEventListener('click',()=>{
+  impRows.push({numeroPedido:'',cliente:'',telefone:'',endereco:'',numero:'',bairro:'',cidade:'Natal',uf:'RN',cep:''});
+  renderImport();
+  const wrap=document.querySelector('.imp-wrap'); wrap.scrollTop=wrap.scrollHeight;
+});
+$('impConfirmar').addEventListener('click',async()=>{
+  const data=$('impData').value||dataSel;
+  const validas=impRows.filter(r=>r.endereco&&r.numero);
+  if(!validas.length){toast('Preencha ao menos endereço e número','err');return;}
+  const b=$('impConfirmar'); b.disabled=true; b.innerHTML='<span class="spin"></span> Cadastrando…';
+  const r=await api('saveLote',{entregas:validas,dataEntrega:data});
+  b.disabled=false; b.textContent='Importar entregas';
+  if(!r.ok){toast(r.erro||'Falha na importação','err');return;}
+  if(r.falhas&&r.falhas.length){
+    toast(`${r.importadas} importadas · ${r.falhas.length} com endereço não localizado`,'err');
+    // mantém no modal só as que falharam para correção
+    const nomesFalha=r.falhas.map(f=>f.cliente);
+    impRows=impRows.filter(x=>nomesFalha.indexOf(x.cliente)>-1);
+    renderImport();
+  }else{
+    toast(`${r.importadas} entregas importadas`);
+    fecharImport();
+  }
+  dataSel=data; calRef=new Date(data+'T12:00:00');
+  montarCalendario(); carregar();
+});
+function fecharImport(){ $('modalImport').classList.remove('on'); impRows=[]; }
+document.getElementById('modalImport').addEventListener('click',e=>{ if(e.target.id==='modalImport')fecharImport(); });
 
 /* ---------- ViaCEP ---------- */
 const $=id=>document.getElementById(id);
