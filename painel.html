@@ -381,7 +381,7 @@
 /* =================== CONFIG =================== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvyOUVIEcVjYoJZwWhRMJ_VQtN9JnMPrThutCRBvH-DQQXd5mKm3mGkxuDtXmmIp6H/exec';
 // ↓ Cole a MESMA chave de navegador que você já usou (a que começa com AIzaSyDngiacf...)
-const GOOGLE_MAPS_BROWSER_KEY = 'COLE_AQUI_A_CHAVE_DO_NAVEGADOR';
+const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyCvmSmyTTsBd_S6KKoV3f684qSDeP0U0Vc';
 /* ============================================= */
 
 let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLine, atualLine;
@@ -481,19 +481,34 @@ async function extrairTextoPdf(file){
   return texto;
 }
 function parseRelatorio(texto){
-  const flat=texto.replace(/\s+/g,' ');
-  const blocoRe=/ENTREGA:\d-(\d+).*?CLIENTE:(.+?)\s+DATA ENTREGA:\s*(\d{2}\/\d{2}\/\d{4}).*?FONES:\s*(.+?)\s+PER[IÍ]ODO:\s*\S+\s+(.+?N[ºo°]\s*[\w\-]+,\s*.+?,\s*.+?\/\s*[A-Z]{2}\s*-\s*\d{8})/g;
-  const addrRe=/^(.*?)\s+N[ºo°]\s*([\w\-]+),\s*(.+?),\s*(.+?)\/\s*([A-Z]{2})\s*-\s*(\d{8})/;
-  const vistos={}, out=[]; let m;
-  while((m=blocoRe.exec(flat))){
-    const pid=m[1]; if(vistos[pid])continue;
-    const a=addrRe.exec(m[5].trim()); if(!a)continue;
+  const flat=texto.replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim();
+  const marc=/ENTREGA:\s*\d\s*-\s*\d+/g;
+  const pos=[]; let mm;
+  while((mm=marc.exec(flat))) pos.push(mm.index);
+  const out=[], vistos={};
+  const addrRe=/N[ºo°]\s*([\w\-]+)\s*,\s*([^,]+?)\s*,\s*([^,\/]+?)\s*\/\s*([A-Z]{2})\s*-\s*(\d{8})/;
+  for(let k=0;k<pos.length;k++){
+    const bloco=flat.slice(pos[k], k+1<pos.length?pos[k+1]:undefined);
+    const mid=/ENTREGA:\s*\d\s*-\s*(\d+)/.exec(bloco); if(!mid)continue;
+    const pid=mid[1]; if(vistos[pid])continue;
+    const madd=addrRe.exec(bloco); if(!madd)continue;
+    const mcli=/CLIENTE:\s*(.+?)\s*DATA\s*ENTREGA:/i.exec(bloco);
+    const mfone=/FONES?:\s*(.+?)\s*PER[IÍ]ODO:/i.exec(bloco);
+    // logradouro = trecho entre "PERÍODO: <valor>" e o "Nº"
+    let ini=bloco.slice(0, madd.index), logra='';
+    const sp=ini.split(/PER[IÍ]ODO:\s*\S+\s+/i);
+    if(sp.length>1) logra=sp.pop().trim();
+    else { const mf=/([A-ZÀ-Ú0-9][^,]*)$/.exec(ini.trim()); logra=mf?mf[1].trim():''; }
+    logra=logra.replace(/^ROTA\s+/i,'').trim();
     vistos[pid]=1;
-    out.push({numeroPedido:pid, cliente:m[2].trim(), telefone:m[4].split('/')[0].trim(),
-      endereco:a[1].trim(), numero:a[2].trim(), bairro:a[3].trim(),
-      cidade:a[4].trim(), uf:a[5].trim(), cep:a[6].trim()});
+    out.push({numeroPedido:pid, cliente:mcli?mcli[1].trim():'',
+      telefone:mfone?mfone[1].split('/')[0].trim():'',
+      endereco:logra, numero:madd[1].trim(), bairro:madd[2].trim(),
+      cidade:madd[3].trim(), uf:madd[4].trim(), cep:madd[5].trim()});
   }
-  return {entregas:out, data:out.length?out[0]._data:null, dataBr:(flat.match(/DATA ENTREGA:\s*(\d{2}\/\d{2}\/\d{4})/)||[])[1]};
+  const dataBr=(flat.match(/DATA\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{4})/i)||[])[1];
+  if(!out.length) console.log('DEBUG leitura PDF (cole isto pro suporte):', flat.slice(0,900));
+  return {entregas:out, dataBr};
 }
 function brParaIso(br){ if(!br)return null; const[d,mm,a]=br.split('/'); return `${a}-${mm}-${d}`; }
 
