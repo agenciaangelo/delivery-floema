@@ -388,6 +388,7 @@ let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLine, atualLine;
 let markers=[], entregas=[], ultimaRota=null, trackMarkers={};
 let dataSel = fmtHoje();
 let calRef = new Date();
+const $=id=>document.getElementById(id);
 
 /* ---------- API ---------- */
 async function api(action, extra){
@@ -561,7 +562,6 @@ function fecharImport(){ $('modalImport').classList.remove('on'); impRows=[]; }
 document.getElementById('modalImport').addEventListener('click',e=>{ if(e.target.id==='modalImport')fecharImport(); });
 
 /* ---------- ViaCEP ---------- */
-const $=id=>document.getElementById(id);
 $('cep').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,8);e.target.value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v;});
 $('cep').addEventListener('blur',async e=>{
   const cep=e.target.value.replace(/\D/g,''); if(cep.length!==8)return;
