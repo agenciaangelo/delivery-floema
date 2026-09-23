@@ -85,6 +85,10 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)} .toast.err{background:var(--atrasado)}
   .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
   @keyframes rot{to{transform:rotate(360deg)}}
+  .loading{position:fixed;inset:0;background:rgba(244,246,243,.72);display:none;align-items:center;justify-content:center;z-index:100}
+  .loading.on{display:flex}
+  .load-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 24px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px rgba(16,33,28,.15);font-size:14px;font-weight:600;color:var(--verde)}
+  .load-spin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--verde);border-radius:50%;animation:rot .7s linear infinite}
 </style>
 </head>
 <body>
@@ -124,6 +128,8 @@
   <button class="btn btn-nav" id="btnEncerrar">Encerrar rota</button>
 </footer>
 
+<div class="loading" id="loading"><div class="load-box"><div class="load-spin"></div><span>Carregando…</span></div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -135,10 +141,19 @@ let estado=null; // {nome,saida,data,entregas[],pernas[],tempoServico,kmTotal, f
 let watchId=null, ultimoGPS=0;
 const $=id=>document.getElementById(id);
 
-async function api(action,extra){
-  const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({action},extra||{}))});
-  return r.json();
+let apiBusy=0;
+async function api(action,extra,silent){
+  if(!silent){ apiBusy++; mostrarLoading(true); }
+  try{
+    const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({action},extra||{}))});
+    return await r.json();
+  }catch(err){
+    return { ok:false, erro:'Falha de conexão' };
+  }finally{
+    if(!silent){ apiBusy=Math.max(0,apiBusy-1); if(apiBusy===0) mostrarLoading(false); }
+  }
 }
+function mostrarLoading(on){ const el=document.getElementById('loading'); if(el)el.classList.toggle('on',on); }
 function salvar(){try{localStorage.setItem('floema_rota',JSON.stringify(estado));}catch(_){}}
 function restaurar(){try{const s=localStorage.getItem('floema_rota');if(s){estado=JSON.parse(s);return true;}}catch(_){}return false;}
 function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
@@ -151,7 +166,7 @@ $('btnIniciar').addEventListener('click',async()=>{
   if(!nome){toast('Digite seu nome','err');return;}
   if(!saida){toast('Informe a saída','err');return;}
   const b=$('btnIniciar');b.disabled=true;b.innerHTML='<span class="spin"></span> Montando rota…';
-  const r=await api('iniciarRota',{data,motoqueiro:nome});
+  const r=await api('iniciarRota',{data,motoqueiro:nome,saida});
   b.disabled=false;b.textContent='Iniciar rota';
   if(!r.ok){toast(r.erro||'Sem entregas nessa data','err');return;}
   estado={nome,saida,data,entregas:r.entregas,pernas:r.pernas,tempoServico:r.tempoServicoMin||5,kmTotal:r.kmOtimizada,feito:{}};
@@ -165,6 +180,7 @@ function mostrarRota(){
 function pendentes(){return estado.entregas.filter(e=>!estado.feito[e.id]);}
 
 /* ETA: encadeia a partir da última conclusão (ou saída) */
+function janela(e){ return { min:e.horaMin||'', max:e.horaMax||e.limiteHorario||'' }; }
 function calcularETAs(){
   const feitos=Object.keys(estado.feito).length;
   const horas=Object.values(estado.feito).map(f=>f.hora).filter(Boolean).sort();
@@ -173,9 +189,10 @@ function calcularETAs(){
   pendentes().forEach((e,i)=>{
     const perna=estado.pernas[feitos+i];
     t+=(perna?perna.segundos*1000:0);
-    const chegada=new Date(t);
-    let late=e.temLimite&&e.limiteHorario&&chegada>hojeComHora(e.limiteHorario);
-    etas[e.id]={hhmm:hhmm(chegada),late};
+    const chegada=new Date(t); const j=janela(e);
+    let late=j.max&&chegada>hojeComHora(j.max);
+    let early=j.min&&chegada<hojeComHora(j.min);
+    etas[e.id]={hhmm:hhmm(chegada),late,early};
     t+=serv;
   });
   return etas;
@@ -196,14 +213,16 @@ function render(){
     const div=document.createElement('div');
     div.className='stop'+(done?' done':'')+(nao?' nao':'')+(atual?' atual':'');
     let badge='';
+    const jj=janela(e);
     if(nao&&f.motivo)badge=`<span class="badge motivo">Não entregue: ${f.motivo}</span>`;
     else if(e.observacao)badge=`<span class="badge obs">${e.observacao}</span>`;
-    else if(eta&&eta.late&&!f)badge='<span class="badge late">Fora do limite</span>';
-    else if(e.temLimite&&e.limiteHorario&&!f)badge=`<span class="badge limite">Limite ${e.limiteHorario}</span>`;
+    else if(eta&&eta.late&&!f)badge='<span class="badge late">Chega tarde demais</span>';
+    else if(eta&&eta.early&&!f)badge='<span class="badge limite">Chega cedo demais</span>';
+    else if((jj.min||jj.max)&&!f)badge=`<span class="badge limite">Janela ${jj.min||'--'}–${jj.max||'--'}</span>`;
 
     const etaBox=done?`<div class="eta"><div class="lbl">Feita</div><div class="hh mono">✓</div></div>`
       :nao?`<div class="eta"><div class="lbl">—</div><div class="hh mono">✕</div></div>`
-      :eta?`<div class="eta ${eta.late?'late':''}"><div class="lbl">Chega</div><div class="hh mono">${eta.hhmm}</div></div>`:'';
+      :eta?`<div class="eta ${eta.late||eta.early?'late':''}"><div class="lbl">Chega</div><div class="hh mono">${eta.hhmm}</div></div>`:'';
 
     const maps=`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`;
     const ped=e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:'';
@@ -255,18 +274,21 @@ window.naoEntregue=async function(id){
 window.voltarDepois=async function(id){
   const obs=prompt('Observação (opcional) — por que está deixando para depois?\n(ex.: ninguém no local, vou passar de novo mais tarde)');
   if(obs===null)return;
-  // move a parada para o fim da fila e marca observação/adiado
+  // adia a parada: ela passa a ser a 2ª da fila (o entregador faz a próxima e volta nesta)
   const idx=estado.entregas.findIndex(e=>e.id===id);
   if(idx>-1){
     const [e]=estado.entregas.splice(idx,1);
     if(obs)e.observacao=obs;
-    estado.entregas.push(e);
+    let inserido=false;
+    for(let k=0;k<estado.entregas.length;k++){
+      if(!estado.feito[estado.entregas[k].id]){ estado.entregas.splice(k+1,0,e); inserido=true; break; }
+    }
+    if(!inserido) estado.entregas.push(e);
   }
   salvar();
   await api('updateStatus',{id,status:'adiado',observacao:obs||''});
-  // persiste a nova ordem no backend
   await api('updateOrder',{ordens:estado.entregas.map((e,i)=>({id:e.id,ordem:i+1}))});
-  render();toast('Parada movida para o fim');
+  render();toast('Você volta nesta parada após a próxima');
 };
 
 function avisarProximo(e){
@@ -285,7 +307,7 @@ function iniciarGPS(){
   $('gps').classList.add('on');
   watchId=navigator.geolocation.watchPosition(pos=>{
     const agora=Date.now(); if(agora-ultimoGPS<15000)return; ultimoGPS=agora;
-    api('saveTrack',{motoqueiro:estado.nome,lat:pos.coords.latitude,lng:pos.coords.longitude});
+    api('saveTrack',{motoqueiro:estado.nome,lat:pos.coords.latitude,lng:pos.coords.longitude},true);
   },err=>{$('gps').classList.remove('on');toast('Ative a localização','err');},
   {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
 }
