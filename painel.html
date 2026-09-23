@@ -33,7 +33,7 @@
   header .conn i{width:8px;height:8px;border-radius:50%;background:var(--verde-claro);animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-  .grid{display:grid;grid-template-columns:400px 1fr;gap:18px;padding:18px;height:calc(100% - 63px)}
+  .grid{display:grid;grid-template-columns:1.35fr 0.65fr;gap:18px;padding:18px;height:calc(100% - 63px)}
   @media(max-width:920px){.grid{grid-template-columns:1fr;height:auto}}
   .col{display:flex;flex-direction:column;gap:16px;min-height:0}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -66,7 +66,6 @@
   input:focus,select:focus{outline:none;border-color:var(--verde-claro);box-shadow:0 0 0 3px rgba(63,163,77,.15)}
   .check{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer}
   .check input{width:17px;height:17px;accent-color:var(--verde)}
-  #wrapLimite{display:none} #wrapLimite.on{display:block}
 
   .btn{border:none;border-radius:10px;padding:11px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;
     display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s}
@@ -74,6 +73,7 @@
   .btn-primary{background:var(--verde);color:#fff} .btn-primary:hover{filter:brightness(1.08)}
   .btn-accent{background:var(--verde-claro);color:#06301f}
   .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .btn-vermelho{background:#fff;color:var(--atrasado);border:1px solid #F1C7C7}
 
   /* Lista */
   .lista{padding:8px 10px 12px;overflow:auto;flex:1;min-height:120px}
@@ -123,7 +123,7 @@
   table.imp .rm{border:none;background:#FBE9E9;color:var(--atrasado);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:15px}
   .imp-acoes{display:flex;gap:10px;margin-top:14px;align-items:center}
   .imp-acoes .btn{flex:none} .imp-acoes .add{margin-right:auto}
-  .col-ped{width:88px}.col-fone{width:120px}.col-num{width:64px}.col-uf{width:44px}.col-cep{width:92px}.col-rm{width:34px}
+  .col-ped{width:88px}.col-fone{width:120px}.col-num{width:64px}.col-uf{width:44px}.col-cep{width:92px}.col-hora{width:96px}.col-rm{width:34px}
   .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;background:#fff}
   .modal-head .mh-info{flex:1;min-width:0}
   .modal-head .mh-ped{font-size:12px;color:var(--ouro);font-weight:700}
@@ -148,6 +148,15 @@
     display:none;align-items:center;gap:8px}
   .rotaInfo.on{display:flex}
   .rotaInfo b{font-weight:600}
+  .statusRota{margin:12px 18px 0;padding:11px 13px;border-radius:10px;font-size:13px;font-weight:600;display:none;align-items:center;gap:9px}
+  .statusRota.on{display:flex}
+  .statusRota .pt{width:9px;height:9px;border-radius:50%;flex:none}
+  .statusRota.rascunho{background:#EEF1EF;color:#5A6862} .statusRota.rascunho .pt{background:#94A3B8}
+  .statusRota.gerada{background:#FBF1DC;color:#8A6D1E} .statusRota.gerada .pt{background:var(--ouro)}
+  .statusRota.enviada{background:#E7EEFE;color:#1D4ED8} .statusRota.enviada .pt{background:#2563EB}
+  .statusRota.em_rota{background:#E7EEFE;color:#1D4ED8} .statusRota.em_rota .pt{background:#2563EB;animation:pulse 2s infinite}
+  .statusRota.concluida{background:#E6F5EC;color:#15803D} .statusRota.concluida .pt{background:var(--concluido)}
+  .statusRota small{font-weight:500;opacity:.85}
   .resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:12px;overflow:hidden;margin:14px 18px 4px}
   .resumo .cell{background:#fff;padding:13px 14px}
   .resumo .cell .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
@@ -157,12 +166,41 @@
   .saida-box{display:flex;align-items:center;gap:9px;padding:0 18px 12px}
   .saida-box label{margin:0}
 
-  #map{flex:1;min-height:360px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
-  .map-card{flex:1;display:flex;flex-direction:column;min-height:380px}
+  #map{flex:1;min-height:240px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+  .map-card{flex:none;display:flex;flex-direction:column;height:330px}
 
   /* Dashboard */
   #tabDash{display:none;padding:18px;gap:18px;grid-template-columns:1fr 1fr}
   #tabDash.on{display:grid}
+  #tabPrev{display:none;padding:18px;max-width:820px;margin:0 auto}
+  #tabPrev.on{display:block}
+  .prev-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .prev-titulo{font-size:18px;font-weight:700}
+  .prev-sub{font-size:13px;color:var(--muted);margin-top:3px}
+  .prev-saida label{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:5px}
+  .prev-saida input{padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px}
+  .timeline{position:relative;padding-left:8px}
+  .tl-item{position:relative;display:flex;gap:16px;padding:0 0 6px 0}
+  .tl-time{flex:none;width:66px;text-align:right;padding-top:14px}
+  .tl-time .hh{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .tl-time .hh.fura{color:var(--atrasado)}
+  .tl-time .jan{font-size:10px;color:var(--muted);margin-top:1px}
+  .tl-mid{flex:none;display:flex;flex-direction:column;align-items:center}
+  .tl-dot{width:15px;height:15px;border-radius:50%;background:var(--verde);border:3px solid #fff;box-shadow:0 0 0 1px var(--line);margin-top:15px}
+  .tl-dot.concluido{background:var(--concluido)} .tl-dot.nao_entregue{background:var(--atrasado)}
+  .tl-dot.adiado{background:var(--adiado)} .tl-dot.fura{background:var(--atrasado)}
+  .tl-line{flex:1;width:2px;background:var(--line);min-height:8px}
+  .tl-card{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+  .tl-card:hover{border-color:var(--verde-claro)}
+  .tl-card.fura{border-color:#F1C7C7;background:#FEF6F6}
+  .tl-card .cli{font-weight:600;font-size:14px}
+  .tl-card .cli .ped{color:var(--ouro);font-size:11px;font-weight:700}
+  .tl-card .end{font-size:12px;color:var(--muted);margin-top:2px}
+  .tl-card .badges{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px}
+  .badge.motivo{background:#FBE9E9;color:var(--atrasado)}
+  .badge.obs{background:#FBF1DC;color:var(--adiado)}
+  .tl-empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px}
   @media(max-width:920px){#tabDash.on{grid-template-columns:1fr}}
   .dashcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
   .dashcard h3{margin:0 0 16px;font-size:16px;display:flex;align-items:center;gap:8px}
@@ -205,6 +243,10 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)} .toast.err{background:var(--atrasado)}
   .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
   @keyframes rot{to{transform:rotate(360deg)}}
+  .loading{position:fixed;inset:0;background:rgba(244,246,243,.72);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:100}
+  .loading.on{display:flex}
+  .load-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 26px;display:flex;align-items:center;gap:14px;box-shadow:0 12px 40px rgba(16,33,28,.15);font-size:14px;font-weight:600;color:var(--verde)}
+  .load-spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--verde);border-radius:50%;animation:rot .7s linear infinite}
 </style>
 </head>
 <body>
@@ -214,6 +256,7 @@
   <div class="titulo">Entregas<small>Gestão</small></div>
   <nav class="tabs">
     <button id="tabBtnOp" class="on" onclick="verTab('op')">Operação</button>
+    <button id="tabBtnPrev" onclick="verTab('prev')">Previsão</button>
     <button id="tabBtnDash" onclick="verTab('dash')">Dashboard</button>
   </nav>
   <div class="conn"><i></i><span id="conn">conectando…</span></div>
@@ -247,9 +290,13 @@
         <div class="cell"><div class="k">Paradas <span class="info right">i<span class="bub">Entregas que ainda faltam concluir nesse dia.</span></span></div><div class="v mono" id="paradas">0</div></div>
       </div>
       <div class="saida-box"><label>Saída prevista <span class="info">i<span class="bub">Horário em que o entregador sai da Floema. Serve para calcular a previsão de chegada de cada parada.</span></span></label><input type="time" id="saida" style="width:120px"></div>
+      <div class="statusRota" id="statusRota"></div>
       <div class="toolbar">
         <button class="btn btn-accent" id="btnGerar" style="flex:1">Gerar rota</button>
         <button class="btn btn-ghost" id="btnLimpar">Limpar dia</button>
+      </div>
+      <div class="toolbar" id="linhaEnviar" style="display:none;padding-top:0">
+        <button class="btn btn-primary" id="btnEnviar" style="flex:1">📤 Enviar para o entregador</button>
       </div>
     </div>
     <div class="card map-card"><div id="map"></div></div>
@@ -282,6 +329,21 @@
   </div>
 </div>
 
+<div id="tabPrev">
+  <div class="prev-head">
+    <div>
+      <div class="prev-titulo">Previsão de chegada <span class="mono" id="prevData" style="color:var(--verde-claro)"></span></div>
+      <div class="prev-sub" id="prevSub">Selecione o dia na aba Operação e gere a rota.</div>
+    </div>
+    <div class="prev-saida">
+      <label>Saída da Floema</label>
+      <input type="time" id="prevSaida">
+    </div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+
 <div class="modal" id="modalImport">
   <div class="modal-card wide">
     <div class="modal-head">
@@ -301,7 +363,8 @@
           <thead><tr>
             <th class="col-ped">Nº pedido</th><th>Cliente</th><th class="col-fone">Fone</th>
             <th>Endereço</th><th class="col-num">Nº</th><th>Bairro</th><th>Cidade</th>
-            <th class="col-uf">UF</th><th class="col-cep">CEP</th><th class="col-rm"></th>
+            <th class="col-uf">UF</th><th class="col-cep">CEP</th>
+            <th class="col-hora">A partir</th><th class="col-hora">Até</th><th class="col-rm"></th>
           </tr></thead>
           <tbody id="impBody"></tbody>
         </table>
@@ -319,7 +382,7 @@
   <div class="modal-card">
     <div class="modal-head">
       <div class="mh-info">
-        <div class="mh-nome">Nova entrega</div>
+        <div class="mh-nome" id="mfTitulo">Nova entrega</div>
         <div class="mh-ped" id="formDataLbl" style="color:var(--verde-claro)"></div>
       </div>
       <button class="fechar" onclick="fecharFormModal()">×</button>
@@ -346,8 +409,10 @@
           <div><label>Cidade</label><input type="text" id="cidade" placeholder="Natal"></div>
           <div><label>UF</label><input type="text" id="uf" placeholder="RN" maxlength="2"></div>
         </div>
-        <label class="check"><input type="checkbox" id="temLimite"> Tem limite de horário <span class="info">i<span class="bub">Marque se o cliente precisa receber até certo horário. A rota sinaliza em vermelho quando a previsão de chegada passa desse limite.</span></span></label>
-        <div id="wrapLimite"><label>Horário limite</label><input type="time" id="limiteHorario"></div>
+        <div class="row two">
+          <div><label>Chegar a partir de <span class="info">i<span class="bub">Horário mínimo: o entregador não deve chegar antes disso. Deixe vazio se não houver.</span></span></label><input type="time" id="horaMin"></div>
+          <div><label>Chegar até <span class="info right">i<span class="bub">Horário máximo: o entregador não pode chegar depois disso. A previsão fica vermelha se furar. Deixe vazio se não houver.</span></span></label><input type="time" id="horaMax"></div>
+        </div>
         <button type="submit" class="btn btn-primary" id="btnAdd">Adicionar entrega</button>
       </form>
     </div>
@@ -371,9 +436,12 @@
       </div>
       <div id="mLinhas"></div>
       <div class="macoes" id="mAcoes"></div>
+      <div class="macoes" id="mAcoes2"></div>
     </div>
   </div>
 </div>
+
+<div class="loading" id="loading"><div class="load-box"><div class="load-spin"></div><span>Carregando…</span></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -386,14 +454,27 @@ const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyCvmSmyTTsBd_S6KKoV3f684qSDeP0U0Vc';
 
 let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLine, atualLine;
 let markers=[], entregas=[], ultimaRota=null, trackMarkers={};
+let rotaInfoAtual=null, rotaDispatch='';
 let dataSel = fmtHoje();
 let calRef = new Date();
 const $=id=>document.getElementById(id);
 
 /* ---------- API ---------- */
-async function api(action, extra){
-  const r = await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({action},extra||{}))});
-  return r.json();
+let apiBusy=0;
+async function api(action, extra, silent){
+  if(!silent){ apiBusy++; mostrarLoading(true); }
+  try{
+    const r = await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({action},extra||{}))});
+    return await r.json();
+  }catch(err){
+    return { ok:false, erro:'Falha de conexão' };
+  }finally{
+    if(!silent){ apiBusy=Math.max(0,apiBusy-1); if(apiBusy===0) mostrarLoading(false); }
+  }
+}
+function mostrarLoading(on){
+  const el=document.getElementById('loading'); if(!el)return;
+  el.classList.toggle('on', on);
 }
 function fmtHoje(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -403,9 +484,12 @@ function labelData(iso){const[a,m,dia]=iso.split('-');return `${dia}/${m}`;}
 function verTab(t){
   document.getElementById('tabOp').style.display = t==='op'?'grid':'none';
   document.getElementById('tabDash').classList.toggle('on', t==='dash');
+  document.getElementById('tabPrev').classList.toggle('on', t==='prev');
   document.getElementById('tabBtnOp').classList.toggle('on', t==='op');
   document.getElementById('tabBtnDash').classList.toggle('on', t==='dash');
+  document.getElementById('tabBtnPrev').classList.toggle('on', t==='prev');
   if(t==='dash') carregarDashboard();
+  if(t==='prev') renderPrevisao();
 }
 
 /* ---------- Mapa ---------- */
@@ -532,10 +616,11 @@ $('fileImport').addEventListener('change',async e=>{
 
 function renderImport(){
   $('impCount').textContent=impRows.length;
-  const campos=['numeroPedido','cliente','telefone','endereco','numero','bairro','cidade','uf','cep'];
-  const cls={numeroPedido:'col-ped',telefone:'col-fone',numero:'col-num',uf:'col-uf',cep:'col-cep'};
+  const campos=['numeroPedido','cliente','telefone','endereco','numero','bairro','cidade','uf','cep','horaMin','horaMax'];
+  const cls={numeroPedido:'col-ped',telefone:'col-fone',numero:'col-num',uf:'col-uf',cep:'col-cep',horaMin:'col-hora',horaMax:'col-hora'};
+  const tipo={horaMin:'time',horaMax:'time'};
   $('impBody').innerHTML=impRows.map((r,i)=>
-    '<tr>'+campos.map(c=>`<td class="${cls[c]||''}"><input data-i="${i}" data-c="${c}" value="${(r[c]||'').toString().replace(/"/g,'&quot;')}"></td>`).join('')
+    '<tr>'+campos.map(c=>`<td class="${cls[c]||''}"><input type="${tipo[c]||'text'}" data-i="${i}" data-c="${c}" value="${(r[c]||'').toString().replace(/"/g,'&quot;')}"></td>`).join('')
     +`<td class="col-rm"><button class="rm" data-rm="${i}" title="Remover">×</button></td></tr>`
   ).join('');
 }
@@ -586,37 +671,54 @@ $('cep').addEventListener('blur',async e=>{
     if(d.localidade)$('cidade').value=d.localidade; if(d.uf)$('uf').value=d.uf; $('numero').focus();
   }catch(_){toast('Erro ao consultar CEP','err');}
 });
-$('temLimite').addEventListener('change',e=>$('wrapLimite').classList.toggle('on',e.target.checked));
-
-/* ---------- Cadastro ---------- */
+/* ---------- Cadastro / Edição ---------- */
+let editandoId=null;
 $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const b=$('btnAdd');
   const ent={numeroPedido:$('numeroPedido').value.trim(), dataEntrega:$('dataEntrega').value||dataSel,
     cliente:$('cliente').value.trim(), telefone:$('telefone').value.trim(), cep:$('cep').value.trim(),
     endereco:$('endereco').value.trim(), numero:$('numero').value.trim(), bairro:$('bairro').value.trim(),
-    cidade:$('cidade').value.trim(), uf:$('uf').value.trim(), temLimite:$('temLimite').checked, limiteHorario:$('limiteHorario').value};
+    cidade:$('cidade').value.trim(), uf:$('uf').value.trim(), horaMin:$('horaMin').value, horaMax:$('horaMax').value};
   if(!ent.endereco||!ent.numero){toast('Preencha endereço e número','err');return;}
-  b.disabled=true;b.innerHTML='<span class="spin"></span> Localizando…';
-  const r=await api('save',{entrega:ent});
-  b.disabled=false;b.textContent='Adicionar entrega';
+  b.disabled=true;b.innerHTML='<span class="spin"></span> '+(editandoId?'Salvando…':'Localizando…');
+  const r=editandoId ? await api('updateEntrega',{id:editandoId,campos:ent}) : await api('save',{entrega:ent});
+  b.disabled=false;b.textContent=editandoId?'Salvar alterações':'Adicionar entrega';
   if(!r.ok){toast(r.erro||'Falha ao salvar','err');return;}
   const dataQueSalvou=ent.dataEntrega;
-  e.target.reset();$('wrapLimite').classList.remove('on');$('dataEntrega').value=dataSel;
-  toast('Entrega adicionada');
+  toast(editandoId?'Entrega atualizada':'Entrega adicionada');
+  editandoId=null; e.target.reset(); $('dataEntrega').value=dataSel;
   fecharFormModal();
   montarCalendario();
   if(dataQueSalvou===dataSel) carregar();
 });
 
-/* ---------- Modal de cadastro ---------- */
+/* ---------- Modal de cadastro / edição ---------- */
 function abrirFormModal(){
+  editandoId=null;
+  $('form').reset();
+  $('mfTitulo').textContent='Nova entrega';
+  $('btnAdd').textContent='Adicionar entrega';
   $('dataEntrega').value=dataSel;
   $('formDataLbl').textContent='para '+labelData(dataSel);
   $('modalForm').classList.add('on');
   setTimeout(()=>$('numeroPedido').focus(),50);
 }
-function fecharFormModal(){ $('modalForm').classList.remove('on'); }
+function abrirEdicao(id){
+  const e=entregas.find(x=>x.id===id); if(!e)return;
+  editandoId=id;
+  $('mfTitulo').textContent='Editar entrega';
+  $('btnAdd').textContent='Salvar alterações';
+  $('formDataLbl').textContent='#'+(e.numeroPedido||'—');
+  $('numeroPedido').value=e.numeroPedido||''; $('dataEntrega').value=e.dataEntrega||dataSel;
+  $('cliente').value=e.cliente||''; $('telefone').value=e.telefone||''; $('cep').value=e.cep||'';
+  $('endereco').value=e.endereco||''; $('numero').value=e.numero||''; $('bairro').value=e.bairro||'';
+  $('cidade').value=e.cidade||''; $('uf').value=e.uf||'';
+  $('horaMin').value=e.horaMin||''; $('horaMax').value=e.horaMax||e.limiteHorario||'';
+  fecharDetalhe();
+  $('modalForm').classList.add('on');
+}
+function fecharFormModal(){ $('modalForm').classList.remove('on'); editandoId=null; }
 document.getElementById('btnNova').addEventListener('click',abrirFormModal);
 document.getElementById('modalForm').addEventListener('click',e=>{ if(e.target.id==='modalForm')fecharFormModal(); });
 
@@ -625,12 +727,54 @@ async function carregar(){
   const r=await api('list',{data:dataSel});
   if(!r.ok)return;
   entregas=r.entregas;
-  // indicador de entregador
-  const ri=$('rotaInfo');
-  if(r.rotaInfo){ri.classList.add('on');ri.innerHTML=`🏍️ Rota iniciada por <b>${r.rotaInfo.motoqueiro}</b> às <b>${r.rotaInfo.horaInicio}</b>`;}
-  else ri.classList.remove('on');
+  rotaInfoAtual = r.rotaInfo || null;
+  $('rotaInfo').classList.remove('on'); // status agora fica na barra statusRota
+  // restaura a rota salva desta data (sobrevive ao recarregar a página)
+  await restaurarRota();
   render(); desenharMarcadores();
+  atualizarStatusRota();
 }
+async function restaurarRota(){
+  const rr=await api('getRota',{data:dataSel});
+  if(rr.ok&&rr.rota&&rr.rota.pernas&&rr.rota.pernas.length){
+    ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:5,polyline:rr.rota.polyline};
+    rotaDispatch=rr.rota.statusRota||'gerada';
+    if(rr.rota.saida)$('saida').value=rr.rota.saida;
+    $('kmTotal').textContent=(rr.rota.kmOtimizada!=null?rr.rota.kmOtimizada.toFixed(1):'—')+' km';
+    $('kmEcon').textContent=(rr.rota.economiaKm!=null?'−'+(+rr.rota.economiaKm).toFixed(1):'—')+' km';
+    desenharRota(rr.rota.polyline);
+  }else{
+    ultimaRota=null; rotaDispatch=''; if(routeLine)routeLine.setMap(null);
+    $('kmTotal').textContent='—'; $('kmEcon').textContent='—';
+  }
+}
+/* ---------- Status da rota + enviar ---------- */
+function atualizarStatusRota(){
+  const el=$('statusRota'), linha=$('linhaEnviar');
+  const temEntregas=entregas.length>0;
+  const pend=entregas.filter(e=>e.status!=='concluido'&&e.status!=='nao_entregue');
+  const algumEmRota=entregas.some(e=>e.status==='em_rota');
+  const iniciada = (rotaInfoAtual&&rotaInfoAtual.horaInicio) || algumEmRota || rotaDispatch==='em_rota';
+  let chave, label, sub='';
+  if(temEntregas && pend.length===0 && (iniciada||rotaDispatch)){ chave='concluida'; label='Rota concluída'; }
+  else if(iniciada){ chave='em_rota'; label='Entregador em rota';
+    sub=(rotaInfoAtual&&rotaInfoAtual.motoqueiro)?`· ${rotaInfoAtual.motoqueiro}${rotaInfoAtual.horaInicio?' desde '+rotaInfoAtual.horaInicio:''}`:''; }
+  else if(rotaDispatch==='enviada'){ chave='enviada'; label='Enviada — aguardando entregador'; }
+  else if(ultimaRota||rotaDispatch==='gerada'){ chave='gerada'; label='Rota gerada — não enviada'; }
+  else { chave='rascunho'; label='Sem rota gerada'; }
+
+  el.className='statusRota on '+chave;
+  el.innerHTML=`<span class="pt"></span><span>${label} ${sub?`<small>${sub}</small>`:''}</span>`;
+  // botão Enviar aparece só quando a rota está gerada e ainda não foi enviada/iniciada
+  linha.style.display = (chave==='gerada') ? 'flex' : 'none';
+}
+$('btnEnviar').addEventListener('click',async()=>{
+  const r=await api('enviarRota',{data:dataSel});
+  if(!r.ok){toast(r.erro||'Falha ao enviar','err');return;}
+  rotaDispatch='enviada';
+  toast('Rota enviada para o entregador');
+  atualizarStatusRota();
+});
 
 function render(){
   const lista=$('lista');
@@ -644,10 +788,11 @@ function render(){
     let status=e.status||'pendente';
     let etaHtml='';
     if(etas&&etas[i]&&status!=='concluido'&&status!=='nao_entregue'){
-      const late=etas[i].late; if(late&&status==='pendente')status='atrasado';
-      etaHtml=`<span class="eta ${late?'late':''}">chega ${etas[i].hhmm}</span>`;
+      const fura=etas[i].late||etas[i].early; if(etas[i].late&&status==='pendente')status='atrasado';
+      etaHtml=`<span class="eta ${fura?'late':''}">chega ${etas[i].hhmm}${etas[i].early?' (cedo)':''}</span>`;
     }
-    const limiteHtml=e.temLimite&&e.limiteHorario?`<span class="limite">limite ${e.limiteHorario}</span>`:'';
+    const j=janela(e);
+    const limiteHtml=(j.min||j.max)?`<span class="limite">⏱ ${j.min||'--'}–${j.max||'--'}</span>`:'';
     const pedHtml=e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:'';
     const quemHtml=e.motoqueiro?`<span class="quem">🏍️ ${e.motoqueiro}</span>`:'';
     const obsHtml=e.observacao?`<div class="obs">"${e.observacao}"</div>`:'';
@@ -691,7 +836,8 @@ function abrirDetalhe(id){
   if(e.cep)linhas.push(['CEP', e.cep]);
   if(e.telefone)linhas.push(['WhatsApp', formatTel(e.telefone)]);
   linhas.push(['Data da entrega', labelData(e.dataEntrega)]);
-  if(e.temLimite&&e.limiteHorario)linhas.push(['Limite de horário', e.limiteHorario]);
+  const jd=janela(e);
+  if(jd.min||jd.max)linhas.push(['Janela de horário', `${jd.min||'--'} até ${jd.max||'--'}`]);
   linhas.push(['Posição na rota', (idx+1)+'º']);
   if(e.horaConclusao)linhas.push(['Concluída às', fmtHora(e.horaConclusao)]);
   if(e.motivo)linhas.push(['Motivo', e.motivo]);
@@ -707,8 +853,17 @@ function abrirDetalhe(id){
   }
   if(e.lat&&e.lng) ac.push(`<a class="btn btn-primary" href="https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}" target="_blank" rel="noopener">Ver no mapa</a>`);
   $('mAcoes').innerHTML=ac.join('');
+  $('mAcoes2').innerHTML=`<button class="btn btn-ghost" onclick="abrirEdicao('${e.id}')">Editar</button>`
+    +`<button class="btn btn-vermelho" onclick="excluirEntrega('${e.id}')">Excluir</button>`;
 
   $('modal').classList.add('on');
+}
+async function excluirEntrega(id){
+  const e=entregas.find(x=>x.id===id);
+  if(!confirm(`Excluir a entrega de ${e&&e.cliente?e.cliente:'este cliente'}? Esta ação não pode ser desfeita.`))return;
+  const r=await api('deleteEntrega',{id});
+  if(!r.ok){toast(r.erro||'Falha ao excluir','err');return;}
+  fecharDetalhe(); toast('Entrega excluída'); montarCalendario(); carregar();
 }
 function fecharDetalhe(){ $('modal').classList.remove('on'); }
 function formatTel(t){const d=(t+'').replace(/\D/g,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return t;}
@@ -716,6 +871,7 @@ function fmtHora(iso){try{const d=new Date(iso);return String(d.getDate()).padSt
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')fecharDetalhe(); });
 
 /* ETA */
+function janela(e){ return { min:e.horaMin||'', max:e.horaMax||e.limiteHorario||'' }; }
 function calcularETAs(){
   if(!ultimaRota||!ultimaRota.pernas)return null;
   const saidaStr=$('saida').value; if(!saidaStr)return null;
@@ -724,9 +880,11 @@ function calcularETAs(){
   const pend=entregas.filter(e=>e.status!=='concluido'&&e.status!=='nao_entregue');
   for(let i=0;i<pend.length;i++){
     t+=(pernas[i]?pernas[i].segundos*1000:0);
-    const chegada=new Date(t); let late=false; const e=pend[i];
-    if(e.temLimite&&e.limiteHorario&&chegada>hojeComHora(e.limiteHorario))late=true;
-    out.push({hhmm:hhmm(chegada),late}); t+=serv;
+    const chegada=new Date(t); const e=pend[i]; const j=janela(e);
+    let late=false, early=false;
+    if(j.max&&chegada>hojeComHora(j.max))late=true;
+    if(j.min&&chegada<hojeComHora(j.min))early=true;
+    out.push({hhmm:hhmm(chegada),late,early}); t+=serv;
   }
   const full=[];let k=0;
   entregas.forEach(e=>{full.push((e.status==='concluido'||e.status==='nao_entregue')?null:out[k++]);});
@@ -777,8 +935,15 @@ function desenharMarcadores(){
 
 /* Gerar rota */
 $('btnGerar').addEventListener('click',async()=>{
+  let saida=$('saida').value;
+  if(!saida){
+    saida=prompt('Horário de saída da Floema (para calcular a previsão de chegada):', hhmm(new Date()));
+    if(saida===null)return;
+    if(!/^\d{1,2}:\d{2}$/.test(saida)){toast('Horário inválido','err');return;}
+    $('saida').value=saida;
+  }
   const b=$('btnGerar');b.disabled=true;b.innerHTML='<span class="spin"></span> Calculando…';
-  const r=await api('optimize',{data:dataSel});
+  const r=await api('optimize',{data:dataSel,saida:saida});
   b.disabled=false;b.textContent='Gerar rota';
   if(!r.ok){toast(r.erro||'Falha ao gerar','err');return;}
   ultimaRota={pernas:r.pernas,tempoServicoMin:r.tempoServicoMin,polyline:r.polyline};
@@ -793,7 +958,7 @@ function desenharRota(encoded){
   routeLine=new google.maps.Polyline({path:google.maps.geometry.encoding.decodePath(encoded),map,
     strokeColor:'#3FA34D',strokeOpacity:.85,strokeWeight:5});
 }
-$('saida').addEventListener('change',render);
+$('saida').addEventListener('change',()=>{ render(); if(document.getElementById('tabBtnPrev')&&document.getElementById('tabBtnPrev').classList.contains('on'))renderPrevisao(); });
 
 /* Limpar dia (apaga só entregas da data — usa clear geral em teste) */
 $('btnLimpar').addEventListener('click',async()=>{
@@ -806,7 +971,7 @@ $('btnLimpar').addEventListener('click',async()=>{
 
 /* Rastreio + rota em destaque (trecho atual) */
 async function atualizarRastreio(){
-  let r; try{ r=await api('getTrack'); }catch(_){ return; }
+  let r; try{ r=await api('getTrack', null, true); }catch(_){ return; }
   if(!r||!r.ok||!Array.isArray(r.posicoes))return;
   r.posicoes.forEach(p=>{
     if(!p.lat||!p.lng)return; const pos={lat:p.lat,lng:p.lng};
@@ -836,6 +1001,45 @@ function presetRange(p){
   if(p==='30'){const i=new Date(h);i.setDate(h.getDate()-29);return{de:f(i),ate:f(h)};}
   return{de:f(h),ate:f(h)};
 }
+/* ---------- Aba Previsão (linha do tempo) ---------- */
+function renderPrevisao(){
+  $('prevData').textContent='· '+labelData(dataSel);
+  $('prevSaida').value=$('saida').value||'';
+  const tl=$('timeline');
+  const pend=entregas.filter(e=>e.status!=='concluido'&&e.status!=='nao_entregue');
+  if(!entregas.length){ tl.innerHTML='<div class="tl-empty">Nenhuma entrega nesse dia.</div>'; $('prevSub').textContent='Escolha outro dia na aba Operação.'; return; }
+  const etas=calcularETAs();
+  if(!etas){ tl.innerHTML='<div class="tl-empty">Gere a rota e informe a saída (aba Operação) para ver a previsão de chegada.</div>'; $('prevSub').textContent='Sem rota gerada ainda.'; return; }
+  const quem=[...new Set(entregas.filter(e=>e.motoqueiro).map(e=>e.motoqueiro))];
+  $('prevSub').textContent = (quem.length?('Entregador: '+quem.join(', ')+' · '):'')+`${pend.length} paradas · saída ${$('saida').value}`;
+
+  tl.innerHTML=entregas.map((e,i)=>{
+    const eta=etas[i];
+    const done=e.status==='concluido', nao=e.status==='nao_entregue';
+    const j=janela(e);
+    const fura=eta&&(eta.late||eta.early);
+    const dotCls=done?'concluido':nao?'nao_entregue':e.status==='adiado'?'adiado':(fura?'fura':'');
+    const hh = done?'✓':nao?'✕':(eta?eta.hhmm:'--:--');
+    const janTxt=(j.min||j.max)?`${j.min||'--'}–${j.max||'--'}`:'';
+    let badges='';
+    if(eta&&eta.late)badges+='<span class="badge motivo">chega tarde demais</span>';
+    if(eta&&eta.early)badges+='<span class="badge obs">chega cedo demais</span>';
+    if(e.motoqueiro)badges+=`<span class="quem">🏍️ ${e.motoqueiro}</span>`;
+    if(e.observacao)badges+=`<span class="badge obs">"${e.observacao}"</span>`;
+    const last=i===entregas.length-1;
+    return `<div class="tl-item">
+      <div class="tl-time"><div class="hh mono ${fura?'fura':''}">${hh}</div>${janTxt?`<div class="jan">${janTxt}</div>`:''}</div>
+      <div class="tl-mid"><div class="tl-dot ${dotCls}"></div>${last?'':'<div class="tl-line"></div>'}</div>
+      <div class="tl-card ${fura?'fura':''}" onclick="abrirDetalhe('${e.id}')">
+        <div class="cli">${e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:''}${e.cliente||'Sem nome'}</div>
+        <div class="end">${i+1}º · ${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
+        ${badges?`<div class="badges">${badges}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+$('prevSaida').addEventListener('change',e=>{ $('saida').value=e.target.value; renderPrevisao(); });
+
 async function carregarDashboard(){
   // ao abrir a aba, aplica o preset ativo (semana por padrão)
   const cur=document.querySelector('.preset.on'); const p=cur?cur.dataset.p:'semana';
