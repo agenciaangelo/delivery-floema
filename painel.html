@@ -167,7 +167,7 @@
   .saida-box label{margin:0}
 
   #map{flex:1;min-height:240px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
-  .map-card{flex:none;display:flex;flex-direction:column;height:330px}
+  .map-card{flex:1;display:flex;flex-direction:column;min-height:300px}
 
   /* Dashboard */
   #tabDash{display:none;padding:18px;gap:18px;grid-template-columns:1fr 1fr}
@@ -265,11 +265,6 @@
 <!-- ===================== OPERAÇÃO ===================== -->
 <div class="grid" id="tabOp">
   <div class="col">
-    <div class="card">
-      <h2>Calendário <span class="info">i<span class="bub">Os dias com bolinha têm entregas cadastradas. Clique num dia para ver e roteirizar as entregas dele.</span></span></h2>
-      <div class="cal" id="cal"></div>
-    </div>
-
     <div class="card col" style="flex:1;min-height:0">
       <h2>Entregas do dia <span class="info">i<span class="bub">Clique num cartão para ver os detalhes. Arraste pelo número para reordenar — a nova ordem é salva sozinha.</span></span> <span id="count" class="mono" style="color:var(--verde-claro)"></span>
         <button type="button" class="btn btn-ghost btn-mini" id="btnImportar" style="margin-left:auto">Importar PDF</button>
@@ -278,9 +273,7 @@
       <input type="file" id="fileImport" accept="application/pdf" style="display:none">
       <div class="lista" id="lista"><div class="empty">Selecione um dia no calendário.</div></div>
     </div>
-  </div>
 
-  <div class="col">
     <div class="card">
       <h2>Rota do dia <span class="info">i<span class="bub">Trajeto do dia selecionado, saindo e voltando à Floema. Gere a rota para calcular a melhor ordem e ver o traçado no mapa.</span></span></h2>
       <div class="rotaInfo" id="rotaInfo"></div>
@@ -299,7 +292,14 @@
         <button class="btn btn-primary" id="btnEnviar" style="flex:1">📤 Enviar para o entregador</button>
       </div>
     </div>
+  </div>
+
+  <div class="col">
     <div class="card map-card"><div id="map"></div></div>
+    <div class="card">
+      <h2>Calendário <span class="info">i<span class="bub">Os dias com bolinha têm entregas cadastradas. Clique num dia para ver e roteirizar as entregas dele.</span></span></h2>
+      <div class="cal" id="cal"></div>
+    </div>
   </div>
 </div>
 
@@ -452,7 +452,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwvyOUVIEcVjYoJZwWhRMJ_
 const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyCvmSmyTTsBd_S6KKoV3f684qSDeP0U0Vc';
 /* ============================================= */
 
-let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLine, atualLine;
+let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLines=[], atualLine;
 let markers=[], entregas=[], ultimaRota=null, trackMarkers={};
 let rotaInfoAtual=null, rotaDispatch='';
 let dataSel = fmtHoje();
@@ -724,29 +724,34 @@ document.getElementById('modalForm').addEventListener('click',e=>{ if(e.target.i
 
 /* ---------- Carregar entregas do dia ---------- */
 async function carregar(){
+  await recarregarLista(true);
+}
+// lista + render + status. restaura=true também relê a rota salva do backend.
+async function recarregarLista(restaura){
   const r=await api('list',{data:dataSel});
   if(!r.ok)return;
   entregas=r.entregas;
   rotaInfoAtual = r.rotaInfo || null;
-  $('rotaInfo').classList.remove('on'); // status agora fica na barra statusRota
-  // restaura a rota salva desta data (sobrevive ao recarregar a página)
-  await restaurarRota();
+  $('rotaInfo').classList.remove('on');
+  if(restaura) await restaurarRota();
   render(); desenharMarcadores();
   atualizarStatusRota();
 }
 async function restaurarRota(){
   const rr=await api('getRota',{data:dataSel});
   if(rr.ok&&rr.rota&&rr.rota.pernas&&rr.rota.pernas.length){
-    ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:5,polyline:rr.rota.polyline};
+    ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:5,polylines:rr.rota.polylines};
     rotaDispatch=rr.rota.statusRota||'gerada';
     if(rr.rota.saida)$('saida').value=rr.rota.saida;
     $('kmTotal').textContent=(rr.rota.kmOtimizada!=null?rr.rota.kmOtimizada.toFixed(1):'—')+' km';
     $('kmEcon').textContent=(rr.rota.economiaKm!=null?'−'+(+rr.rota.economiaKm).toFixed(1):'—')+' km';
-    desenharRota(rr.rota.polyline);
-  }else{
-    ultimaRota=null; rotaDispatch=''; if(routeLine)routeLine.setMap(null);
+    desenharRota(rr.rota.polylines);
+  }else if(rr.ok){
+    // backend respondeu certo e não há rota salva para este dia -> limpa
+    ultimaRota=null; rotaDispatch=''; desenharRota(null);
     $('kmTotal').textContent='—'; $('kmEcon').textContent='—';
   }
+  // se rr.ok for false (backend antigo sem getRota), preserva a rota em memória
 }
 /* ---------- Status da rota + enviar ---------- */
 function atualizarStatusRota(){
@@ -946,17 +951,24 @@ $('btnGerar').addEventListener('click',async()=>{
   const r=await api('optimize',{data:dataSel,saida:saida});
   b.disabled=false;b.textContent='Gerar rota';
   if(!r.ok){toast(r.erro||'Falha ao gerar','err');return;}
-  ultimaRota={pernas:r.pernas,tempoServicoMin:r.tempoServicoMin,polyline:r.polyline};
+  ultimaRota={pernas:r.pernas,tempoServicoMin:r.tempoServicoMin,polylines:r.polylines};
+  rotaDispatch='gerada';
   $('kmTotal').textContent=r.kmOtimizada.toFixed(1)+' km';
   $('kmEcon').textContent=(r.economiaKm!=null?'−'+r.economiaKm.toFixed(1):'—')+' km';
-  desenharRota(r.polyline);
-  await carregar();
+  desenharRota(r.polylines);
+  await recarregarLista(false);
+  if(document.getElementById('tabBtnPrev').classList.contains('on'))renderPrevisao();
   toast(r.economiaKm>0?`Rota gerada · ${r.economiaKm.toFixed(1)} km economizados`:'Rota gerada e salva');
 });
-function desenharRota(encoded){
-  if(routeLine)routeLine.setMap(null); if(!encoded)return;
-  routeLine=new google.maps.Polyline({path:google.maps.geometry.encoding.decodePath(encoded),map,
-    strokeColor:'#3FA34D',strokeOpacity:.85,strokeWeight:5});
+function desenharRota(polylines){
+  routeLines.forEach(l=>l.setMap(null)); routeLines=[];
+  if(!polylines)return;
+  const arr = Array.isArray(polylines)?polylines:[polylines];
+  arr.forEach(enc=>{
+    if(!enc)return;
+    routeLines.push(new google.maps.Polyline({path:google.maps.geometry.encoding.decodePath(enc),map,
+      strokeColor:'#3FA34D',strokeOpacity:.85,strokeWeight:5}));
+  });
 }
 $('saida').addEventListener('change',()=>{ render(); if(document.getElementById('tabBtnPrev')&&document.getElementById('tabBtnPrev').classList.contains('on'))renderPrevisao(); });
 
@@ -964,7 +976,7 @@ $('saida').addEventListener('change',()=>{ render(); if(document.getElementById(
 $('btnLimpar').addEventListener('click',async()=>{
   if(!confirm('Apagar TODAS as entregas de teste (todos os dias)?'))return;
   await api('clear');ultimaRota=null;
-  if(routeLine)routeLine.setMap(null);
+  desenharRota(null);
   $('kmTotal').textContent='—';$('kmEcon').textContent='—';
   montarCalendario();carregar();toast('Entregas de teste apagadas');
 });
