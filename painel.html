@@ -78,9 +78,11 @@
   /* Lista */
   .lista{padding:8px 10px 12px;overflow:auto;flex:1;min-height:120px}
   .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:13px}
-  .item{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border-radius:11px;border:1px solid transparent;cursor:grab}
-  .item:hover{background:#F7FAF7;border-color:var(--line)}
-  .item.dragging{opacity:.4}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .12s,border-color .12s,box-shadow .12s}
+  .item:hover{background:#F7FAF7;border-color:var(--line);box-shadow:0 1px 3px rgba(16,33,28,.05)}
+  .item.dragging{opacity:.55;background:#EEF4EF;border-color:var(--verde-claro);box-shadow:0 6px 18px rgba(16,33,28,.12)}
+  .item .grip{flex:none;align-self:center;color:#CBD5CE;cursor:grab;font-size:16px;line-height:1;letter-spacing:-3px;padding:0 1px;margin-right:-2px}
+  .item:hover .grip{color:var(--muted)} .item .grip:active{cursor:grabbing}
   .item .ord{flex:none;width:24px;height:24px;border-radius:7px;background:var(--verde);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;margin-top:1px}
   .item .info{flex:1;min-width:0}
   .item .nome{font-size:14px;font-weight:600;line-height:1.25}
@@ -98,8 +100,6 @@
   .eta{font-size:12px} .eta.late{color:var(--atrasado);font-weight:600}
   .limite{font-size:11px;color:var(--muted)}
   .quem{font-size:11px;font-weight:600;color:var(--rota);display:inline-flex;align-items:center;gap:3px}
-  .item{cursor:pointer}
-  .item .ord{cursor:grab} .item .ord:active{cursor:grabbing}
   .btn-mini{margin-left:auto;padding:7px 12px;font-size:13px}
 
   /* Modal de detalhes */
@@ -645,14 +645,14 @@ $('impConfirmar').addEventListener('click',async()=>{
   const r=await api('saveLote',{entregas:validas,dataEntrega:data});
   b.disabled=false; b.textContent='Importar entregas';
   if(!r.ok){toast(r.erro||'Falha na importação','err');return;}
+  const extra = r.puladas?` · ${r.puladas} já existiam`:'';
   if(r.falhas&&r.falhas.length){
-    toast(`${r.importadas} importadas · ${r.falhas.length} com endereço não localizado`,'err');
-    // mantém no modal só as que falharam para correção
+    toast(`${r.importadas} importadas${extra} · ${r.falhas.length} com endereço não localizado`,'err');
     const nomesFalha=r.falhas.map(f=>f.cliente);
     impRows=impRows.filter(x=>nomesFalha.indexOf(x.cliente)>-1);
     renderImport();
   }else{
-    toast(`${r.importadas} entregas importadas`);
+    toast(`${r.importadas} entregas importadas${extra}`);
     fecharImport();
   }
   dataSel=data; calRef=new Date(data+'T12:00:00');
@@ -801,11 +801,11 @@ function render(){
     const pedHtml=e.numeroPedido?`<span class="ped">#${e.numeroPedido}</span> `:'';
     const quemHtml=e.motoqueiro?`<span class="quem">🏍️ ${e.motoqueiro}</span>`:'';
     const obsHtml=e.observacao?`<div class="obs">"${e.observacao}"</div>`:'';
-    div.innerHTML=`<div class="ord" draggable="true" title="Arraste para reordenar">${i+1}</div><div class="info">
+    div.innerHTML=`<div class="grip" draggable="true" title="Arraste para reordenar">⋮⋮</div><div class="ord">${i+1}</div><div class="info">
       <div class="nome">${pedHtml}${e.cliente||'Sem nome'}</div>
       <div class="end">${e.endereco}, ${e.numero}${e.bairro?' — '+e.bairro:''}</div>
       <div class="meta"><span class="tag ${status}">${rotulo(status)}</span>${etaHtml}${quemHtml}${limiteHtml}</div>${obsHtml}</div>`;
-    div.addEventListener('click',ev=>{ if(ev.target.closest('.ord'))return; abrirDetalhe(e.id); });
+    div.addEventListener('click',ev=>{ if(ev.target.closest('.grip'))return; abrirDetalhe(e.id); });
     lista.appendChild(div);
   });
   ativarDrag();
@@ -901,7 +901,7 @@ function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMin
 /* Drag reorder — arrasta pela alça (número) */
 function ativarDrag(){
   const lista=$('lista');
-  lista.querySelectorAll('.item .ord').forEach(h=>{
+  lista.querySelectorAll('.item .grip').forEach(h=>{
     const it=h.closest('.item');
     h.addEventListener('dragstart',ev=>{it.classList.add('dragging');try{ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain','');}catch(_){}});
     h.addEventListener('dragend',async()=>{
