@@ -656,6 +656,7 @@ $('impConfirmar').addEventListener('click',async()=>{
     fecharImport();
   }
   dataSel=data; calRef=new Date(data+'T12:00:00');
+  verTab('op');           // atalho: volta para a Operação
   montarCalendario(); carregar();
 });
 function fecharImport(){ $('modalImport').classList.remove('on'); impRows=[]; }
@@ -940,6 +941,10 @@ function desenharMarcadores(){
 
 /* Gerar rota */
 $('btnGerar').addEventListener('click',async()=>{
+  const algumEmRota=entregas.some(e=>e.status==='em_rota');
+  if(algumEmRota || rotaDispatch==='em_rota'){
+    if(!confirm('O entregador já está em rota. Gerar de novo vai refazer a rota e zerar o andamento atual. Continuar?'))return;
+  }
   let saida=$('saida').value;
   if(!saida){
     saida=prompt('Horário de saída da Floema (para calcular a previsão de chegada):', hhmm(new Date()));
