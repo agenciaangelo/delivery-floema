@@ -165,6 +165,11 @@
   .toolbar{display:flex;gap:10px;padding:12px 18px}
   .saida-box{display:flex;align-items:center;gap:9px;padding:0 18px 12px}
   .saida-box label{margin:0}
+  .destino-box{padding:0 18px 12px}
+  .destino-box label{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px}
+  .destino-row{display:flex;gap:8px}
+  .destino-row input{flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px}
+  .destino-row input:focus{outline:none;border-color:var(--verde-claro);box-shadow:0 0 0 3px rgba(63,163,77,.15)}
 
   #map{flex:1;min-height:240px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
   .map-card{flex:1;display:flex;flex-direction:column;min-height:300px}
@@ -283,10 +288,18 @@
         <div class="cell"><div class="k">Paradas <span class="info right">i<span class="bub">Entregas que ainda faltam concluir nesse dia.</span></span></div><div class="v mono" id="paradas">0</div></div>
       </div>
       <div class="saida-box"><label>Saída prevista <span class="info">i<span class="bub">Horário em que o entregador sai da Floema. Serve para calcular a previsão de chegada de cada parada.</span></span></label><input type="time" id="saida" style="width:120px"></div>
+      <div class="destino-box">
+        <label>Termina em (casa do entregador) <span class="info">i<span class="bub">Endereço onde a rota termina — a casa do entregador. A rota não volta mais à Floema. Vale só para este dia; altere se ele terminar em outra região.</span></span></label>
+        <div class="destino-row"><input type="text" id="destino" placeholder="Rua, bairro, cidade"><button type="button" class="btn btn-ghost btn-mini" id="btnDestino">Salvar</button></div>
+      </div>
       <div class="statusRota" id="statusRota"></div>
       <div class="toolbar">
         <button class="btn btn-accent" id="btnGerar" style="flex:1">Gerar rota</button>
         <button class="btn btn-ghost" id="btnLimpar">Limpar dia</button>
+      </div>
+      <div class="toolbar" style="padding-top:0">
+        <button class="btn btn-ghost" id="btnOtimizarH" style="flex:1" title="Reordena respeitando os horários mínimo/máximo">⏱ Otimizar com horários</button>
+        <button class="btn btn-ghost" id="btnFinalizar" style="flex:1" title="Recalcula os horários na ordem atual">✓ Finalizar reordenação</button>
       </div>
       <div class="toolbar" id="linhaEnviar" style="display:none;padding-top:0">
         <button class="btn btn-primary" id="btnEnviar" style="flex:1">📤 Enviar para o entregador</button>
@@ -454,7 +467,7 @@ const GOOGLE_MAPS_BROWSER_KEY = 'AIzaSyCvmSmyTTsBd_S6KKoV3f684qSDeP0U0Vc';
 
 let map, floema={lat:-5.809,lng:-35.201}, floemaMarker, routeLines=[], atualLine;
 let markers=[], entregas=[], ultimaRota=null, trackMarkers={};
-let rotaInfoAtual=null, rotaDispatch='';
+let rotaInfoAtual=null, rotaDispatch='', destinoPadrao='';
 let dataSel = (function(){ try{ return localStorage.getItem('floema_dataSel')||fmtHoje(); }catch(_){ return fmtHoje(); } })();
 let calRef = new Date(dataSel+'T12:00:00');
 const $=id=>document.getElementById(id);
@@ -495,7 +508,7 @@ function verTab(t){
 /* ---------- Mapa ---------- */
 async function initMap(){
   // busca a coordenada REAL da Floema no backend
-  try{ const f=await api('floema'); if(f.ok&&f.floema) floema=f.floema; }catch(_){}
+  try{ const f=await api('floema'); if(f.ok){ if(f.floema)floema=f.floema; if(f.destinoPadrao)destinoPadrao=f.destinoPadrao; } }catch(_){}
   map=new google.maps.Map(document.getElementById('map'),{
     center:floema, zoom:13, disableDefaultUI:true, zoomControl:true, clickableIcons:false,
     styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]},
@@ -744,18 +757,18 @@ async function recarregarLista(restaura){
 async function restaurarRota(){
   const rr=await api('getRota',{data:dataSel});
   if(rr.ok&&rr.rota&&rr.rota.pernas&&rr.rota.pernas.length){
-    ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:5,polylines:rr.rota.polylines};
+    ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:10,polylines:rr.rota.polylines};
     rotaDispatch=rr.rota.statusRota||'gerada';
     if(rr.rota.saida)$('saida').value=rr.rota.saida;
+    $('destino').value=rr.rota.destinoEndereco||destinoPadrao;
     $('kmTotal').textContent=(rr.rota.kmOtimizada!=null?rr.rota.kmOtimizada.toFixed(1):'—')+' km';
     $('kmEcon').textContent=(rr.rota.economiaKm!=null?'−'+(+rr.rota.economiaKm).toFixed(1):'—')+' km';
     desenharRota(rr.rota.polylines);
   }else if(rr.ok){
-    // backend respondeu certo e não há rota salva para este dia -> limpa
     ultimaRota=null; rotaDispatch=''; desenharRota(null);
+    $('destino').value=(rr.rota&&rr.rota.destinoEndereco)||destinoPadrao;
     $('kmTotal').textContent='—'; $('kmEcon').textContent='—';
   }
-  // se rr.ok for false (backend antigo sem getRota), preserva a rota em memória
 }
 /* ---------- Status da rota + enviar ---------- */
 function atualizarStatusRota(){
@@ -783,6 +796,49 @@ $('btnEnviar').addEventListener('click',async()=>{
   rotaDispatch='enviada';
   toast('Rota enviada para o entregador');
   atualizarStatusRota();
+});
+
+$('btnDestino').addEventListener('click',async()=>{
+  const endereco=$('destino').value.trim();
+  const r=await api('setDestino',{data:dataSel,endereco});
+  if(!r.ok){toast(r.erro||'Falha ao salvar destino','err');return;}
+  toast('Destino salvo. Gere ou otimize a rota para aplicar.');
+});
+
+$('btnFinalizar').addEventListener('click',async()=>{
+  let saida=$('saida').value;
+  if(!saida){ saida=prompt('Horário de saída da Floema:', hhmm(new Date())); if(saida===null)return; if(!/^\d{1,2}:\d{2}$/.test(saida)){toast('Horário inválido','err');return;} $('saida').value=saida; }
+  const r=await api('recalcularRota',{data:dataSel,saida});
+  if(!r.ok){toast(r.erro||'Falha ao recalcular','err');return;}
+  ultimaRota={pernas:r.pernas,tempoServicoMin:r.tempoServicoMin,polylines:r.polylines};
+  $('kmTotal').textContent=r.kmOtimizada.toFixed(1)+' km';
+  desenharRota(r.polylines);
+  await recarregarLista(false);
+  if($('tabBtnPrev').classList.contains('on'))renderPrevisao();
+  toast('Horários recalculados na sua ordem');
+});
+
+$('btnOtimizarH').addEventListener('click',async()=>{
+  let saida=$('saida').value;
+  if(!saida){ saida=prompt('Horário de saída da Floema:', hhmm(new Date())); if(saida===null)return; if(!/^\d{1,2}:\d{2}$/.test(saida)){toast('Horário inválido','err');return;} $('saida').value=saida; }
+  const algumEmRota=entregas.some(e=>e.status==='em_rota');
+  if(algumEmRota||rotaDispatch==='em_rota'){ if(!confirm('O entregador já está em rota. Otimizar vai refazer a rota. Continuar?'))return; }
+  const b=$('btnOtimizarH'); b.disabled=true; b.textContent='Otimizando…';
+  const r=await api('otimizarComHorarios',{data:dataSel,saida});
+  b.disabled=false; b.textContent='⏱ Otimizar com horários';
+  if(!r.ok){toast(r.erro||'Falha ao otimizar','err');return;}
+  ultimaRota={pernas:r.pernas,tempoServicoMin:r.tempoServicoMin,polylines:r.polylines};
+  rotaDispatch='gerada';
+  $('kmTotal').textContent=r.kmOtimizada.toFixed(1)+' km';
+  $('kmEcon').textContent='—';
+  desenharRota(r.polylines);
+  await recarregarLista(false);
+  if($('tabBtnPrev').classList.contains('on'))renderPrevisao();
+  if(r.conflitos&&r.conflitos.length){
+    toast(`Otimizada · ${r.conflitos.length} não cabe(m) no horário: ${r.conflitos.slice(0,3).join(', ')}`,'err');
+  }else{
+    toast('Rota otimizada respeitando os horários');
+  }
 });
 
 function render(){
