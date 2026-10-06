@@ -157,6 +157,8 @@
   .statusRota.em_rota{background:#E7EEFE;color:#1D4ED8} .statusRota.em_rota .pt{background:#2563EB;animation:pulse 2s infinite}
   .statusRota.concluida{background:#E6F5EC;color:#15803D} .statusRota.concluida .pt{background:var(--concluido)}
   .statusRota small{font-weight:500;opacity:.85}
+  .statusRota .prevchip{margin-left:auto;font-size:12px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .statusRota .prevchip.fura{border-color:#F1C7C7;color:var(--atrasado)}
   .resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:12px;overflow:hidden;margin:14px 18px 4px}
   .resumo .cell{background:#fff;padding:13px 14px}
   .resumo .cell .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
@@ -502,7 +504,7 @@ function verTab(t){
   document.getElementById('tabBtnDash').classList.toggle('on', t==='dash');
   document.getElementById('tabBtnPrev').classList.toggle('on', t==='prev');
   if(t==='dash') carregarDashboard();
-  if(t==='prev') renderPrevisao();
+  if(t==='prev') carregar().then(renderPrevisao);
 }
 
 /* ---------- Mapa ---------- */
@@ -760,6 +762,7 @@ async function restaurarRota(){
     ultimaRota={pernas:rr.rota.pernas,tempoServicoMin:10,polylines:rr.rota.polylines};
     rotaDispatch=rr.rota.statusRota||'gerada';
     if(rr.rota.saida)$('saida').value=rr.rota.saida;
+    else if(rotaInfoAtual&&rotaInfoAtual.horaInicio)$('saida').value=rotaInfoAtual.horaInicio;
     $('destino').value=rr.rota.destinoEndereco||destinoPadrao;
     $('kmTotal').textContent=(rr.rota.kmOtimizada!=null?rr.rota.kmOtimizada.toFixed(1):'—')+' km';
     $('kmEcon').textContent=(rr.rota.economiaKm!=null?'−'+(+rr.rota.economiaKm).toFixed(1):'—')+' km';
@@ -785,9 +788,19 @@ function atualizarStatusRota(){
   else if(ultimaRota||rotaDispatch==='gerada'){ chave='gerada'; label='Rota gerada — não enviada'; }
   else { chave='rascunho'; label='Sem rota gerada'; }
 
+  // previsão de entrega (1ª e última chegada) ao lado do status
+  let prev='';
+  const etas=calcularETAs();
+  if(etas){
+    const comEta=entregas.map((e,i)=>etas[i]).filter(x=>x);
+    if(comEta.length){
+      const primeira=comEta[0].hhmm, ultima=comEta[comEta.length-1].hhmm;
+      const temFura=comEta.some(x=>x.late||x.early);
+      prev=`<span class="prevchip ${temFura?'fura':''}">🕑 ${primeira} – ${ultima}</span>`;
+    }
+  }
   el.className='statusRota on '+chave;
-  el.innerHTML=`<span class="pt"></span><span>${label} ${sub?`<small>${sub}</small>`:''}</span>`;
-  // botão Enviar aparece só quando a rota está gerada e ainda não foi enviada/iniciada
+  el.innerHTML=`<span class="pt"></span><span>${label} ${sub?`<small>${sub}</small>`:''}</span>${prev}`;
   linha.style.display = (chave==='gerada') ? 'flex' : 'none';
 }
 $('btnEnviar').addEventListener('click',async()=>{
@@ -940,7 +953,7 @@ document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id===
 function janela(e){ return { min:e.horaMin||'', max:e.horaMax||e.limiteHorario||'' }; }
 function calcularETAs(){
   if(!ultimaRota||!ultimaRota.pernas)return null;
-  const saidaStr=$('saida').value; if(!saidaStr)return null;
+  const saidaStr=$('saida').value || (rotaInfoAtual&&rotaInfoAtual.horaInicio) || ''; if(!saidaStr)return null;
   const base=hojeComHora(saidaStr), serv=(ultimaRota.tempoServicoMin||5)*60000, pernas=ultimaRota.pernas;
   let t=base.getTime(); const out=[];
   const pend=entregas.filter(e=>e.status!=='concluido'&&e.status!=='nao_entregue');
@@ -1127,7 +1140,8 @@ async function aplicarDashboard(){
   const de=$('dashDe').value, ate=$('dashAte').value, motoqueiro=$('dashMoto').value;
   if(de&&ate&&de>ate){toast('A data inicial é maior que a final','err');return;}
   const r=await api('dashboard',{de,ate,motoqueiro});
-  if(!r.ok)return;
+  if(!r.ok){toast('Dashboard: '+(r.erro||'erro desconhecido'),'err');return;}
+  if(r.total==null){toast('Dashboard desatualizado — reimplante o Codigo.gs como Nova versão','err');return;}
   const sel=$('dashMoto'), atual=sel.value;
   sel.innerHTML='<option value="">Todos os entregadores</option>'+(r.entregadores||[]).map(m=>`<option value="${m}">${m}</option>`).join('');
   sel.value=atual;
