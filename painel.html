@@ -919,6 +919,7 @@ function abrirDetalhe(id){
   if(jd.min||jd.max)linhas.push(['Janela de horário', `${jd.min||'--'} até ${jd.max||'--'}`]);
   linhas.push(['Posição na rota', (idx+1)+'º']);
   if(e.horaConclusao)linhas.push(['Concluída às', fmtHora(e.horaConclusao)]);
+  if(e.recebidoPor)linhas.push(['Recebido por', e.recebidoPor]);
   if(e.motivo)linhas.push(['Motivo', e.motivo]);
   if(e.observacao)linhas.push(['Observação', '"'+e.observacao+'"']);
   $('mLinhas').innerHTML=linhas.map(([k,v])=>`<div class="mrow"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
