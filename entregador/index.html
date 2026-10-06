@@ -89,6 +89,22 @@
   .loading.on{display:flex}
   .load-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 24px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px rgba(16,33,28,.15);font-size:14px;font-weight:600;color:var(--verde)}
   .load-spin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--verde);border-radius:50%;animation:rot .7s linear infinite}
+  .sheet{position:fixed;inset:0;background:rgba(16,33,28,.45);display:none;align-items:flex-end;justify-content:center;z-index:60}
+  .sheet.on{display:flex}
+  .sheet-card{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:4px 0 16px;animation:up .2s ease}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 6px}
+  .sheet-tit{font-size:17px;font-weight:700}
+  .sheet-x{border:none;background:#F1F5F1;width:32px;height:32px;border-radius:9px;font-size:18px;color:var(--muted);cursor:pointer}
+  .sheet-body{padding:6px 18px 4px}
+  .sheet-body .q{font-size:13px;font-weight:600;margin-bottom:8px}
+  .opt{display:flex;align-items:center;gap:11px;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:9px;font-size:15px;cursor:pointer;user-select:none}
+  .opt .box{width:22px;height:22px;border:2px solid var(--line);border-radius:6px;flex:none;display:grid;place-items:center}
+  .opt.sel{border-color:var(--verde);background:#F1F6F2}
+  .opt.sel .box{background:var(--verde);border-color:var(--verde)}
+  .opt.sel .box::after{content:'✓';color:#fff;font-size:14px;font-weight:700}
+  #recebedorNome,#entregaObs{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:11px;font:inherit;font-size:15px;margin-top:2px;resize:none}
+  #recebedorNome:focus,#entregaObs:focus{outline:none;border-color:var(--verde-claro);box-shadow:0 0 0 3px rgba(63,163,77,.15)}
 </style>
 </head>
 <body>
@@ -128,6 +144,24 @@
   <button class="btn btn-verde" id="btnAtualizar">Atualizar rota</button>
   <button class="btn btn-nav" id="btnEncerrar">Encerrar rota</button>
 </footer>
+
+<div class="sheet" id="sheetEntregue">
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div class="sheet-tit">Confirmar entrega</div>
+      <button class="sheet-x" onclick="fecharEntregue()">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="q">Quem recebeu?</div>
+      <label class="opt" id="optProprio"><span class="box"></span> O(a) próprio(a) cliente</label>
+      <label class="opt" id="optOutro"><span class="box"></span> Outra pessoa</label>
+      <input type="text" id="recebedorNome" placeholder="Nome de quem recebeu" style="display:none">
+      <div class="q" style="margin-top:14px">Observação <span style="font-weight:400;color:var(--muted)">(opcional)</span></div>
+      <textarea id="entregaObs" rows="2" placeholder="Algo a registrar sobre a entrega"></textarea>
+      <button class="btn btn-verde" id="btnConfirmarEntrega" style="margin-top:14px">Confirmar entrega</button>
+    </div>
+  </div>
+</div>
 
 <div class="loading" id="loading"><div class="load-box"><div class="load-spin"></div><span>Carregando…</span></div></div>
 
@@ -256,12 +290,46 @@ function render(){
 }
 
 /* ---------- Ações ---------- */
-window.concluir=async function(id){
-  estado.feito[id]={status:'concluido',hora:new Date().toISOString()};
-  salvar();await api('updateStatus',{id,status:'concluido'});
+let entregaAtualId=null;
+window.concluir=function(id){
+  entregaAtualId=id;
+  // reset do modal: padrão = próprio cliente
+  selecionarRecebedor('proprio');
+  $('recebedorNome').value='';
+  $('entregaObs').value='';
+  $('sheetEntregue').classList.add('on');
+};
+function fecharEntregue(){ $('sheetEntregue').classList.remove('on'); entregaAtualId=null; }
+function selecionarRecebedor(quem){
+  $('optProprio').classList.toggle('sel', quem==='proprio');
+  $('optOutro').classList.toggle('sel', quem==='outro');
+  $('recebedorNome').style.display = quem==='outro' ? 'block' : 'none';
+  if(quem==='outro') setTimeout(()=>$('recebedorNome').focus(),50);
+}
+$('optProprio').addEventListener('click',()=>selecionarRecebedor('proprio'));
+$('optOutro').addEventListener('click',()=>selecionarRecebedor('outro'));
+$('sheetEntregue').addEventListener('click',e=>{ if(e.target.id==='sheetEntregue')fecharEntregue(); });
+
+$('btnConfirmarEntrega').addEventListener('click',async()=>{
+  const id=entregaAtualId; if(!id)return;
+  const e=estado.entregas.find(x=>x.id===id);
+  const outro=$('optOutro').classList.contains('sel');
+  let recebidoPor;
+  if(outro){
+    const nome=$('recebedorNome').value.trim();
+    if(!nome){toast('Informe quem recebeu','err');return;}
+    recebidoPor=nome;
+  } else {
+    recebidoPor='O próprio cliente'+(e&&e.cliente?' ('+e.cliente+')':'');
+  }
+  const obs=$('entregaObs').value.trim();
+  estado.feito[id]={status:'concluido',hora:new Date().toISOString(),recebidoPor,obs};
+  salvar();
+  fecharEntregue();
+  await api('updateStatus',{id,status:'concluido',recebidoPor,observacao:obs});
   render();toast('Entrega concluída');
   const prox=pendentes()[0]; if(prox)avisarProximo(prox);
-};
+});
 
 window.naoEntregue=async function(id){
   const motivo=prompt('Motivo de não ter entregado?\n(ex.: ninguém no local, endereço não encontrado)');
