@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR"> 
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -525,6 +525,7 @@ async function initMap(){
   document.getElementById('dataEntrega').value=dataSel;
   carregar();
   setInterval(atualizarRastreio,15000); atualizarRastreio();
+  setInterval(autoRefreshOperacao,20000); // atualiza entregas/previsões sozinho durante a rota
 }
 window.initMap=initMap;
 
@@ -744,8 +745,8 @@ async function carregar(){
   await recarregarLista(true);
 }
 // lista + render + status. restaura=true também relê a rota salva do backend.
-async function recarregarLista(restaura){
-  const r=await api('list',{data:dataSel});
+async function recarregarLista(restaura, silent){
+  const r=await api('list',{data:dataSel}, silent);
   if(!r||!r.ok||!Array.isArray(r.entregas)){ return; }
   entregas=r.entregas;
   rotaInfoAtual = r.rotaInfo || null;
@@ -755,6 +756,16 @@ async function recarregarLista(restaura){
     render(); desenharMarcadores();
     atualizarStatusRota();
   }catch(err){ console.error('Erro ao renderizar:',err); }
+}
+
+// Atualização automática durante uma rota em andamento (silenciosa, sem travar a tela)
+async function autoRefreshOperacao(){
+  if(!document.getElementById('tabBtnOp').classList.contains('on'))return; // só na aba Operação
+  if(document.querySelector('.modal.on'))return;        // não enquanto um modal está aberto
+  if(document.querySelector('.item.dragging'))return;   // não no meio de um arraste
+  const emRota = entregas.some(e=>e.status==='em_rota') || rotaDispatch==='em_rota';
+  if(!emRota)return;                                     // só quando o entregador está em rota
+  await recarregarLista(false, true);
 }
 async function restaurarRota(){
   const rr=await api('getRota',{data:dataSel});
@@ -954,21 +965,33 @@ document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id===
 function janela(e){ return { min:e.horaMin||'', max:e.horaMax||e.limiteHorario||'' }; }
 function calcularETAs(){
   if(!ultimaRota||!ultimaRota.pernas)return null;
-  const saidaStr=$('saida').value || (rotaInfoAtual&&rotaInfoAtual.horaInicio) || ''; if(!saidaStr)return null;
-  const base=hojeComHora(saidaStr), serv=(ultimaRota.tempoServicoMin||5)*60000, pernas=ultimaRota.pernas;
-  let t=base.getTime(); const out=[];
+  const serv=(ultimaRota.tempoServicoMin||10)*60000, pernas=ultimaRota.pernas;
+  // base do cálculo = hora REAL da última entrega concluída; senão, a saída planejada
+  const concl=entregas.filter(e=>e.status==='concluido'&&e.horaConclusao)
+                      .map(e=>new Date(e.horaConclusao).getTime())
+                      .filter(x=>!isNaN(x)).sort((a,b)=>a-b);
+  let base;
+  if(concl.length){ base=concl[concl.length-1]; }
+  else {
+    const saidaStr=$('saida').value || (rotaInfoAtual&&rotaInfoAtual.horaInicio) || '';
+    if(!saidaStr)return null;
+    base=hojeComHora(saidaStr).getTime();
+  }
+  // quantas já saíram da fila (concluídas ou não entregues) para alinhar as pernas
+  const feitos=entregas.filter(e=>e.status==='concluido'||e.status==='nao_entregue').length;
   const pend=entregas.filter(e=>e.status!=='concluido'&&e.status!=='nao_entregue');
+  let t=base; const map={};
   for(let i=0;i<pend.length;i++){
-    t+=(pernas[i]?pernas[i].segundos*1000:0);
+    const perna=pernas[feitos+i];
+    t+=(perna?perna.segundos*1000:0);
     const chegada=new Date(t); const e=pend[i]; const j=janela(e);
     let late=false, early=false;
     if(j.max&&chegada>hojeComHora(j.max))late=true;
     if(j.min&&chegada<hojeComHora(j.min))early=true;
-    out.push({hhmm:hhmm(chegada),late,early}); t+=serv;
+    map[e.id]={hhmm:hhmm(chegada),late,early}; t+=serv;
   }
-  const full=[];let k=0;
-  entregas.forEach(e=>{full.push((e.status==='concluido'||e.status==='nao_entregue')?null:out[k++]);});
-  return full;
+  // devolve array alinhado a entregas (null para concluídas/não entregues)
+  return entregas.map(e=> (e.status==='concluido'||e.status==='nao_entregue')?null:(map[e.id]||null));
 }
 function hojeComHora(s){const[h,m]=s.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d;}
 function hhmm(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
